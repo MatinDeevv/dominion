@@ -1,0 +1,15 @@
+inherit: xauusd_v1.yaml
+
+execution:
+  mode: backtest
+
+backtest:
+  start: "2023-01-01"
+  end: "2024-12-31"
+  initial_capital: 100000.0
+  currency: USD
+
+output:
+  equity_curve: "/app/reports/equity.csv"
+  trade_log: "/app/reports/trades.csv"
+  metrics_json: "/app/reports/metrics.json"

@@ -1,0 +1,22 @@
+aphelion:
+  execution_mode: backtest
+  timezone: UTC
+  symbol: XAUUSD
+  backtest:
+    mt5pipe_root: ..
+    primary_symbol: XAUUSD
+    start_date: "2026-03-14"
+    end_date: "2026-04-14"
+    tick_symbols:
+      - XAUUSD
+    bar_symbols:
+      - XAUUSD
+    bar_timeframes:
+      - M1
+      - M5
+      - M15
+      - H1
+      - H4
+      - D1
+    pipeline_config_path: ../config/pipeline.yaml
+    initial_capital: 10000.0

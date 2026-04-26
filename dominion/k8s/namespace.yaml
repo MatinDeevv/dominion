@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dominion
+  labels:
+    app.kubernetes.io/name: dominion
+    app.kubernetes.io/part-of: dominion

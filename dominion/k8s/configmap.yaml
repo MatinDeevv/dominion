@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dominion-config
+  namespace: dominion
+data:
+  DOMINION_ENV: "production"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  FEATURE_ENGINE_MODE: "event_driven"
+  MT5_TIMEZONE: "UTC"
+  PYTHONUNBUFFERED: "1"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dominion-strategy
+  namespace: dominion
+data:
+  xauusd_v1.yaml: |
+    strategy:
+      symbol: XAUUSD
+      timeframe: 5m
+      risk:
+        max_drawdown_pct: 5.0
+        position_size_pct: 1.0
+        max_positions: 3
+      features:
+        schema_version: 107
+        engine: feature_engine
+      model:
+        name: hydra_ensemble
+        weights_uri: s3://dominion-models/hydra_xauusd_v1/

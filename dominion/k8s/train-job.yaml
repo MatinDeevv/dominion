@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dominion-train
+  namespace: dominion
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: dominion-train
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: train
+          image: dominion:latest
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "machinelearning.training.train"]
+          args:
+            - "--config"
+            - "/app/config/strategies/xauusd_v1.yaml"
+          envFrom:
+            - configMapRef:
+                name: dominion-config
+            - secretRef:
+                name: dominion-secrets
+          resources:
+            requests:
+              cpu: "2"
+              memory: "8Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "8"
+              memory: "32Gi"
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: strategy
+              mountPath: /app/config/strategies
+            - name: models
+              mountPath: /app/models
+            - name: data
+              mountPath: /app/data
+      volumes:
+        - name: strategy
+          configMap:
+            name: dominion-strategy
+        - name: models
+          persistentVolumeClaim:
+            claimName: dominion-models
+        - name: data
+          persistentVolumeClaim:
+            claimName: dominion-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dominion-data
+  namespace: dominion
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 200Gi

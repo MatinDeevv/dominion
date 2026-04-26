@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dominion-live
+  namespace: dominion
+  labels:
+    app: dominion-live
+    role: live-trader
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dominion-live
+  template:
+    metadata:
+      labels:
+        app: dominion-live
+    spec:
+      containers:
+        - name: live
+          image: dominion:latest
+          imagePullPolicy: IfNotPresent
+          args: ["aphelion-paper"]
+          envFrom:
+            - configMapRef:
+                name: dominion-config
+            - secretRef:
+                name: dominion-secrets
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+          volumeMounts:
+            - name: strategy
+              mountPath: /app/config/strategies
+            - name: models
+              mountPath: /app/models
+            - name: logs
+              mountPath: /app/logs
+      volumes:
+        - name: strategy
+          configMap:
+            name: dominion-strategy
+        - name: models
+          persistentVolumeClaim:
+            claimName: dominion-models
+        - name: logs
+          persistentVolumeClaim:
+            claimName: dominion-logs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dominion-models
+  namespace: dominion
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dominion-logs
+  namespace: dominion
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 20Gi

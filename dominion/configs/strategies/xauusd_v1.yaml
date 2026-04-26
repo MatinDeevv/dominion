@@ -1,0 +1,100 @@
+strategy:
+  name: xauusd_v1
+  symbol: XAUUSD
+  timeframe: 5m
+  description: "DOMINION flagship XAU/USD ensemble strategy (HYDRA + SENTINEL)."
+
+data:
+  source: mt5pipe
+  brokers: [primary, secondary]
+  history_start: "2018-01-01"
+  history_end: "auto"
+  tick_storage: "/app/data/ticks"
+  bar_storage: "/app/data/bars"
+
+features:
+  engine: aphelion.feature_engine
+  schema_version: 107
+  families:
+    - technical
+    - microstructure
+    - market_structure
+    - volume_profile
+    - vwap
+    - cross_asset
+    - session_calendar
+    - regime
+  rolling_window_bars: 512
+
+model:
+  name: hydra_ensemble
+  horizons_minutes: [5, 15, 60, 240]
+  components:
+    tft:
+      enabled: true
+      weight: 0.35
+    lstm:
+      enabled: true
+      weight: 0.15
+    cnn:
+      enabled: true
+      weight: 0.10
+    tcn:
+      enabled: true
+      weight: 0.10
+    transformer:
+      enabled: true
+      weight: 0.15
+    moe:
+      enabled: true
+      weight: 0.10
+    xgb:
+      enabled: true
+      weight: 0.05
+  gating:
+    mode: learned
+    adversarial_probe: true
+  calibration:
+    method: conformal
+    alpha: 0.1
+
+risk:
+  sentinel_version: 2
+  max_drawdown_pct: 5.0
+  daily_loss_limit_pct: 2.0
+  position_size_pct: 1.0
+  max_positions: 3
+  stop_loss_pct: 0.5
+  take_profit_r_multiple: 2.0
+  titan:
+    validators: [stability, stress, performance, regression, latency]
+    gate_on_fail: true
+
+execution:
+  mode: paper
+  broker: mt5
+  slippage_model: almgren_chriss
+  commission_bps: 0.3
+  spread_buffer_bps: 0.5
+
+backtest:
+  start: "2023-01-01"
+  end: "2024-12-31"
+  walk_forward:
+    train_months: 12
+    test_months: 3
+    step_months: 3
+  monte_carlo:
+    n_paths: 2000
+    confidence_levels: [0.05, 0.50, 0.95]
+
+logging:
+  level: INFO
+  format: json
+  sinks: [stdout, file]
+  file_path: "/app/logs/xauusd_v1.log"
+
+metrics:
+  enabled: true
+  port: 8000
+  endpoint: /metrics

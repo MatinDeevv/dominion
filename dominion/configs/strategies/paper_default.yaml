@@ -1,0 +1,12 @@
+inherit: xauusd_v1.yaml
+
+execution:
+  mode: paper
+  broker: mt5
+  initial_balance: 10000.0
+
+live:
+  warmup_bars: 512
+  heartbeat_seconds: 15
+  auto_reconnect: true
+  max_reconnect_attempts: 10

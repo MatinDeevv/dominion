@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -q /c/aphelion/Aphelion-Reasearch-main.zip -d aphelion-research)"
+    ]
+  }
+}
