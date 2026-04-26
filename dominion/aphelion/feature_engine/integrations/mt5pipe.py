@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, Sequence
 
 import pyarrow.parquet as pq
+import structlog
 import yaml
 
 from ..engine import FeatureEngine, FeatureEngineConfig
@@ -24,6 +25,8 @@ from ..features import (
 from ..journal import JsonlJournal
 from ..registry import FeatureRegistry
 from ..snapshot import FeatureSnapshot
+
+log = structlog.get_logger(__name__)
 
 
 MT5PIPE_TO_ENGINE_TIMEFRAME = {
@@ -391,12 +394,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         include_btc=args.include_btc,
     )
     snapshots = replay_mt5pipe_into_engine(config)
-    print(f"replayed_events={len(load_mt5pipe_events(config))}")
-    print(f"emitted_snapshots={len(snapshots)}")
+    log.info(
+        "mt5pipe_replay_completed",
+        replayed_events=len(load_mt5pipe_events(config)),
+        emitted_snapshots=len(snapshots),
+    )
     if snapshots:
-        print(f"latest_snapshot_ts_event_ns={snapshots[-1].ts_event_ns}")
-        print(f"latest_snapshot_timeframe={snapshots[-1].timeframe}")
-        print(f"latest_snapshot_missing_count={snapshots[-1].missing_count}")
+        log.info(
+            "mt5pipe_replay_latest_snapshot",
+            ts_event_ns=snapshots[-1].ts_event_ns,
+            timeframe=snapshots[-1].timeframe,
+            missing_count=snapshots[-1].missing_count,
+        )
     return 0
 
 

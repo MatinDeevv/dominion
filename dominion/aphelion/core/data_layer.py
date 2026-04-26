@@ -52,7 +52,7 @@ class Bar:
     spread: float
     is_complete: bool = False
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return {
             "timestamp": self.timestamp,
             "timeframe": self.timeframe.value,
@@ -78,7 +78,7 @@ class BarAggregator:
         Timeframe.W1: 604800,
     }
 
-    def __init__(self, timeframe: Timeframe):
+    def __init__(self, timeframe: Timeframe) -> None:
         self.timeframe = timeframe
         self._interval = self.TIMEFRAME_SECONDS[timeframe]
         self._current_bar: Optional[Bar] = None
@@ -152,7 +152,7 @@ class DataQualityValidator:
         max_spread: float = 50.0,
         max_price_jump_pct: float = 0.05,
         max_gap_seconds: float = 120.0,
-    ):
+    ) -> None:
         self._last_prices: deque = deque(maxlen=100)
         self._last_tick_time: float = 0.0
         self._gap_count = 0
@@ -204,7 +204,7 @@ class DataQualityValidator:
         return True, None
 
     @property
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, int]:
         return {
             "gap_count": self._gap_count,
             "invalid_count": self._invalid_count,
@@ -224,7 +224,7 @@ class DataLayer:
         max_spread: float = 50.0,
         max_price_jump_pct: float = 0.05,
         max_gap_seconds: float = 120.0,
-    ):
+    ) -> None:
         self.event_bus = event_bus
         self.symbol = symbol
         self._validator = DataQualityValidator(

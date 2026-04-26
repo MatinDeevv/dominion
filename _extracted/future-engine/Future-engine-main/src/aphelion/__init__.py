@@ -1,2 +1,0 @@
-"""Aphelion trading platform packages."""
-

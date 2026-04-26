@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import torch
+import structlog
 
 from machinelearning.data import AphelionDataModule, DEFAULT_SCHEMA
 from machinelearning.models import AphelionTFT
@@ -33,6 +34,7 @@ BASELINE_HOLDOUT_ACC = 0.5096
 DATASET_ARTIFACT_ID = "219cc1cdb344"
 DATASET_TRUST_SCORE = 98.11
 LOGGER = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
 class _CompatTrainer:
@@ -272,10 +274,13 @@ def train(
     if best_ic != best_ic:
         best_ic = fit_metrics.get("val/ic_60m", float("nan"))
     best_balanced_acc = fit_metrics.get("val/balanced_acc_60m", float("nan"))
-    print(f"val/ic_60m:          {best_ic:.4f}")
-    print(f"val/balanced_acc_60m:{best_balanced_acc:.4f}")
-    print(f"baseline:             {BASELINE_BALANCED_ACC:.4f}")
-    print(f"delta:               {best_balanced_acc - BASELINE_BALANCED_ACC:+.4f}")
+    log.info(
+        "training_validation_metrics",
+        val_ic_60m=best_ic,
+        val_balanced_acc_60m=best_balanced_acc,
+        baseline=BASELINE_BALANCED_ACC,
+        delta=best_balanced_acc - BASELINE_BALANCED_ACC,
+    )
 
 
 def _metric_to_float(value: Any) -> float:

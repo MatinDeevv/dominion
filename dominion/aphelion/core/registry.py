@@ -48,7 +48,7 @@ class Registry:
     - Error rate tracking
     """
 
-    def __init__(self, heartbeat_timeout: float = HEARTBEAT_TIMEOUT_SECONDS):
+    def __init__(self, heartbeat_timeout: float = HEARTBEAT_TIMEOUT_SECONDS) -> None:
         self._components: dict[str, ComponentState] = {}
         self._start_time = time.time()
         self._heartbeat_timeout = heartbeat_timeout

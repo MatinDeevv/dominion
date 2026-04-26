@@ -7,7 +7,7 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from aphelion.intelligence.hydra.ensemble import HydraGate
-from aphelion_data import add_high_value_gold_features, feat_asian_range
+from aphelion.gold_feature_pack import add_high_value_gold_features, feat_asian_range
 from scripts.train_hydra_tiny import build_tiny_ensemble_config
 
 

@@ -14,7 +14,7 @@ from aphelion.core.config import KELLY_FRACTION, KELLY_MAX_F, SENTINEL
 class PositionSizer:
     """Quarter-Kelly position sizing with hardcoded SENTINEL caps."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def kelly_fraction(self, win_rate: float, avg_win: float, avg_loss: float) -> float:

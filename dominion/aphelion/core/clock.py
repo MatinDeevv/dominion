@@ -19,7 +19,7 @@ from aphelion.core.config import (
 class MarketClock:
     """Tracks market sessions, news events, and trading hours."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._news_calendar: list[dict] = []
         self._news_times: list[datetime] = []  # sorted high-impact times for bisect
         self._market_close_friday_utc = (21, 0)  # Friday 21:00 UTC
@@ -84,8 +84,10 @@ class MarketClock:
             ny = dt.astimezone(ZoneInfo("America/New_York"))
             # UTC offset in minutes; DST adds +60 to local time, so sessions
             # move -60 in UTC terms
-            london_utcoff = london.utcoffset().total_seconds() / 60
-            ny_utcoff = ny.utcoffset().total_seconds() / 60
+            london_offset = london.utcoffset() or timedelta(0)
+            ny_offset = ny.utcoffset() or timedelta(0)
+            london_utcoff = london_offset.total_seconds() / 60
+            ny_utcoff = ny_offset.total_seconds() / 60
             # London is UTC+0 in winter, UTC+1 in summer → session offset = -(utcoff)
             self._dst_offset_london = -int(london_utcoff)
             # NY is UTC-5 in winter, UTC-4 in summer → session offset = -(utcoff + 300)

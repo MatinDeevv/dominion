@@ -242,6 +242,7 @@ class HephaestusSandbox:
 
             passed = 0
             failed = 0
+            output = open(1, "w", closefd=False)
 
             tests = [
                 ("empty",       np.zeros((0, 6))),
@@ -260,10 +261,11 @@ class HephaestusSandbox:
                     assert isinstance(v.reason, str), "reason must be str"
                     passed += 1
                 except Exception as e:
-                    print(f"FAIL {{name}}: {{e}}")
+                    output.write(f"FAIL {{name}}: {{e}}\\n")
                     failed += 1
 
-            print(f"PASSED={{passed}} FAILED={{failed}}")
+            output.write(f"PASSED={{passed}} FAILED={{failed}}\\n")
+            output.flush()
         """)
         return prefix + voter_block + suffix
 

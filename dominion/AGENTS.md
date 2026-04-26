@@ -6,6 +6,8 @@ Core Python code lives in `aphelion/`, organized by domain:
 - `features/` (feature-engine pipeline and sub-engines)
 - module namespaces such as `risk/`, `evolution/`, `macro/`, `flow/`, `intelligence/`, `governance/`, and `tui/`
 
+The `cpp/` directory is reserved for the QuantLib-backed simulation backend. The pybind11 binding is pending; Python code should use `aphelion/evolution/cpp_backend.py`, which falls back to pure-Python engines when `_dominion_cpp` is not built.
+
 Tests are under `tests/` and mirror runtime modules:
 - `tests/core/`
 - `tests/features/`

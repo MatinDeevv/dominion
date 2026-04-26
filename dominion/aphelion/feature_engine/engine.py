@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from .events import (
     BarCloseEvent,
@@ -117,8 +117,11 @@ class FeatureEngine:
         feature_version = self.version_manager.resolve(applicable_features)
         latest_bar = self.state_store.latest_bar(symbol, timeframe)
         latest_tick = self.state_store.latest_tick(symbol)
+        resolved_ts_event_ns = ts_event_ns
+        if resolved_ts_event_ns is None:
+            resolved_ts_event_ns = cast(int, getattr(latest_bar, "ts_event_ns", getattr(latest_tick, "ts_event_ns", 0)))
         snapshot = build_feature_snapshot(
-            ts_event_ns=ts_event_ns or getattr(latest_bar, "ts_event_ns", getattr(latest_tick, "ts_event_ns", 0)),
+            ts_event_ns=resolved_ts_event_ns,
             symbol=symbol,
             timeframe=timeframe,
             feature_version=feature_version,

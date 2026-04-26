@@ -14,7 +14,7 @@ import time
 from collections import deque
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Any, Callable, Coroutine
+from typing import Any, Callable, Coroutine, cast
 
 from aphelion.core.config import EventTopic
 
@@ -52,8 +52,8 @@ Callback = Callable[[Event], Coroutine[Any, Any, None]]
 class EventBus:
     """Async pub/sub event bus with priority queues, event history, and latency tracking."""
 
-    def __init__(self, max_queue_size: int = 10_000, history_size: int = 1000):
-        self._subscribers: dict[EventTopic, list[Callback]] = {}
+    def __init__(self, max_queue_size: int = 10_000, history_size: int = 1000) -> None:
+        self._subscribers: dict[Any, list[Callback]] = {}
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue(maxsize=max_queue_size)
         self._running = False
         self._task: asyncio.Task | None = None
@@ -100,7 +100,7 @@ class EventBus:
         except asyncio.QueueFull:
             # CRITICAL events must never be lost — force into the heap safely
             if event.priority == Priority.CRITICAL:
-                heapq.heappush(self._queue._queue, event)
+                heapq.heappush(cast(Any, self._queue)._queue, event)
                 logger.warning("Queue full — forced CRITICAL event: %s", event.topic)
             else:
                 self._dropped_count += 1

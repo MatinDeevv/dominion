@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
+import structlog
 
 try:
     import torch
@@ -19,6 +20,8 @@ except ImportError:
     HAS_TORCH = False
 
 from aphelion.core.data_layer import Bar
+
+log = structlog.get_logger(__name__)
 
 
 # ─── Configuration ───────────────────────────────────────────────────────────
@@ -207,7 +210,7 @@ def build_dataset_from_feature_dicts(
     nan_mask = ~np.isfinite(cont_matrix)
     if nan_mask.any():
         n_bad = nan_mask.sum()
-        print(f"  ⚠ Cleaning {n_bad} NaN/Inf values in normalized features")
+        log.warning("normalized_features_cleaned", invalid_count=int(n_bad))
         cont_matrix = np.nan_to_num(cont_matrix, nan=0.0, posinf=0.0, neginf=0.0)
 
     # Build direction labels for each horizon

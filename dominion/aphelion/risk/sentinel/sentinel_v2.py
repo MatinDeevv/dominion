@@ -41,7 +41,7 @@ class CorrelationGuard:
     MAX_TOTAL_POSITIONS = 3         # Max total open positions
     CORRELATION_THRESHOLD = 0.85    # Block if asset correlation > this
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._positions: List[dict] = []
 
     def register_position(self, position_id: str, direction: str, strategy: str = "") -> None:
@@ -94,7 +94,7 @@ class LatencyMonitor:
     P50_THRESHOLD_MS = 100.0      # Max acceptable median latency
     WINDOW_SIZE = 100              # Rolling window
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._records: List[LatencyRecord] = []
         self._halted: bool = False
 
@@ -158,7 +158,7 @@ class CascadeProtection:
     FAILURE_THRESHOLD = 3          # Min failures to trigger
     WINDOW_SECONDS = 60.0          # Time window for cascade detection
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._failures: List[tuple] = []  # (timestamp, module_name, error_msg)
         self._cascade_active: bool = False
 
@@ -209,7 +209,7 @@ class DynamicSizeConfig:
 class DynamicSizer:
     """Adjusts position size based on market regime and volatility."""
 
-    def __init__(self, config: Optional[DynamicSizeConfig] = None):
+    def __init__(self, config: Optional[DynamicSizeConfig] = None) -> None:
         self._config = config or DynamicSizeConfig()
 
     def regime_multiplier(self, regime: str) -> float:
@@ -245,7 +245,7 @@ class SentinelV2:
     Combines all sub-guards and provides a single is_trade_allowed() API.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.correlation_guard = CorrelationGuard()
         self.latency_monitor = LatencyMonitor()
         self.cascade_protection = CascadeProtection()

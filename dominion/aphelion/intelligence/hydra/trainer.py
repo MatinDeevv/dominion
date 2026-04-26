@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+import structlog
 
 try:
     import torch
@@ -45,6 +46,7 @@ except ImportError:
 from aphelion.intelligence.hydra.ensemble import EnsembleConfig, HydraGate
 
 logger = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 # ─── Configuration ────────────────────────────────────────────────────────
 
@@ -330,14 +332,16 @@ if HAS_TORCH:
             cfg = self._config
             n_params = self._model.count_parameters()
 
-            print(f"\n{'='*70}")
-            print(f"  HYDRA TRAINING — {n_params:,} parameters (eager mode)")
-            print(f"  Epochs: {cfg.max_epochs} | Batch: {train_loader.batch_size} "
-                  f"| Grad accum: {cfg.gradient_accumulation_steps}x")
-            print(f"  AMP: {'BF16' if self._use_bf16 else 'FP16' if cfg.use_amp else 'OFF'} "
-                  f"| Device: {self._device}")
-            print(f"  {self._gpu_stats()}")
-            print(f"{'='*70}\n")
+            log.info(
+                "hydra_training_started",
+                parameters=n_params,
+                max_epochs=cfg.max_epochs,
+                batch_size=getattr(train_loader, "batch_size", None),
+                gradient_accumulation_steps=cfg.gradient_accumulation_steps,
+                amp="BF16" if self._use_bf16 else "FP16" if cfg.use_amp else "OFF",
+                device=str(self._device),
+                gpu_stats=self._gpu_stats(),
+            )
 
             t_start = time.time()
 
@@ -374,54 +378,61 @@ if HAS_TORCH:
                 ep_t = time.time() - t_ep
                 eta = (cfg.max_epochs - epoch - 1) * ep_t
                 sharpe = val_m.get("sharpe_proxy", 0.0)
-                conf = f" conf={val_m['mean_confidence']:.3f}" if "mean_confidence" in val_m else ""
-                mark = " * BEST" if improved else ""
-                swa_tag = " [SWA]" if use_swa else ""
-                pct = (epoch + 1) / cfg.max_epochs
-                bar = f"[{'#'*int(20*pct)}{'.'*int(20*(1-pct))}]"
-                pat = f"[{self._epochs_no_improve}/{cfg.patience}]"
-
-                print(
-                    f"  E{epoch+1:>3}/{cfg.max_epochs} {bar} "
-                    f"loss={train_m['loss']:.4f}/{val_m['loss']:.4f} "
-                    f"acc={val_m['accuracy']*100:.1f}% "
-                    f"sharpe={sharpe:+.3f}{conf} "
-                    f"lr={lr:.2e}{swa_tag} "
-                    f"({ep_t:.0f}s) ETA={self._format_eta(eta)} "
-                    f"{self._gpu_stats()} "
-                    f"pat={pat}{mark}"
+                log.info(
+                    "hydra_epoch_completed",
+                    epoch=epoch + 1,
+                    max_epochs=cfg.max_epochs,
+                    train_loss=float(train_m["loss"]),
+                    val_loss=float(val_m["loss"]),
+                    val_accuracy=float(val_m["accuracy"]),
+                    sharpe=float(sharpe),
+                    mean_confidence=val_m.get("mean_confidence"),
+                    learning_rate=float(lr),
+                    use_swa=use_swa,
+                    epoch_seconds=ep_t,
+                    eta=self._format_eta(eta),
+                    gpu_stats=self._gpu_stats(),
+                    epochs_no_improve=self._epochs_no_improve,
+                    patience=cfg.patience,
+                    improved=improved,
                 )
 
                 # Periodic checkpoint
                 if (epoch + 1) % cfg.save_every_n_epochs == 0:
                     self._save_checkpoint("latest")
-                    print(f"    Checkpoint saved (epoch {epoch+1})")
+                    log.info("hydra_checkpoint_saved", epoch=epoch + 1, checkpoint="latest")
 
                 # Early stopping
                 if self._epochs_no_improve >= cfg.patience:
-                    print(f"\n  Early stop at epoch {epoch+1} "
-                          f"(no improvement for {cfg.patience} epochs)")
-                    print(f"  Best Sharpe: {self._best_val_sharpe:.4f} "
-                          f"| Best Loss: {self._best_val_loss:.4f}")
+                    log.info(
+                        "hydra_early_stop",
+                        epoch=epoch + 1,
+                        patience=cfg.patience,
+                        best_val_sharpe=self._best_val_sharpe,
+                        best_val_loss=self._best_val_loss,
+                    )
                     break
 
             # SWA finalize
             if self._swa_model is not None and self._epoch >= cfg.swa_start_epoch:
                 try:
                     from torch.optim.swa_utils import update_bn
-                    print("  Running SWA BN update...")
+                    log.info("hydra_swa_bn_update_started")
                     update_bn(train_loader, self._swa_model, device=self._device)
                     self._save_checkpoint("swa_final")
-                    print("  SWA finalized")
+                    log.info("hydra_swa_finalized")
                 except Exception as e:
-                    print(f"  SWA BN update failed: {e}")
+                    log.error("hydra_swa_bn_update_failed", error=str(e))
 
             total_t = time.time() - t_start
-            print(f"\n{'='*70}")
-            print(f"  DONE — {self._format_eta(total_t)}")
-            print(f"  Epochs: {self._epoch+1} | Best Sharpe: {self._best_val_sharpe:.4f} "
-                  f"| Best Loss: {self._best_val_loss:.4f}")
-            print(f"{'='*70}\n")
+            log.info(
+                "hydra_training_completed",
+                duration=self._format_eta(total_t),
+                duration_seconds=total_t,
+                epochs=self._epoch + 1,
+                best_val_sharpe=self._best_val_sharpe,
+                best_val_loss=self._best_val_loss,
+            )
 
             return {
                 "total_epochs": self._epoch + 1,
@@ -470,7 +481,7 @@ if HAS_TORCH:
                 # NaN guard
                 if torch.isnan(cont).any() or torch.isinf(cont).any():
                     if bi == 0:
-                        print(f"    NaN/Inf in inputs at batch {bi} — skipping")
+                        log.warning("hydra_batch_inputs_invalid", batch=bi)
                     continue
                 if torch.isnan(raw_ret).any() or torch.isinf(raw_ret).any():
                     raw_ret = torch.nan_to_num(raw_ret, nan=0.0, posinf=0.0, neginf=0.0)
@@ -535,7 +546,7 @@ if HAS_TORCH:
                 # NaN loss guard
                 if torch.isnan(loss) or torch.isinf(loss):
                     if bi < 3:
-                        print(f"    NaN loss at batch {bi} — skipping")
+                        log.warning("hydra_batch_loss_invalid", batch=bi)
                     self._optimizer.zero_grad(set_to_none=True)
                     n_batches += 1
                     batch_times.append(time.time() - t0)

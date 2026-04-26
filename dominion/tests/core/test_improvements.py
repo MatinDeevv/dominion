@@ -297,48 +297,6 @@ class TestValidatorImprovements:
 # ─── Microstructure Improvements ─────────────────────────────────────────────
 
 
-class TestMicrostructureImprovements:
-    def test_hawkes_o1_matches_expected(self):
-        """O(1) Hawkes should produce monotonically increasing intensity."""
-        from aphelion.features.microstructure import HawkesIntensity
-        hawkes = HawkesIntensity(decay=0.1, baseline=1.0)
-        i1 = hawkes.update(1.0)
-        i2 = hawkes.update(1.1)
-        i3 = hawkes.update(1.2)
-        # Each event should increase intensity
-        assert i2 > i1
-        assert i3 > i2
-
-    def test_hawkes_decays_over_time(self):
-        """Intensity should decay when queried later without events."""
-        from aphelion.features.microstructure import HawkesIntensity
-        hawkes = HawkesIntensity(decay=1.0, baseline=1.0)
-        hawkes.update(0.0)
-        early = hawkes.current(0.1)
-        late = hawkes.current(10.0)
-        assert late < early
-
-    def test_ofi_normalized_range(self):
-        """Normalized OFI should be in [-1, 1]."""
-        from aphelion.features.microstructure import OFICalculator
-        ofi = OFICalculator(window=10)
-        ofi.update(2800.0, 2800.5, 10.0, 10.0)
-        ofi.update(2801.0, 2801.5, 15.0, 10.0)
-        ofi.update(2802.0, 2802.5, 20.0, 10.0)
-        assert -1.0 <= ofi.normalized <= 1.0
-
-    def test_microstructure_state_has_ofi_normalized(self):
-        from aphelion.features.microstructure import MicrostructureEngine
-        engine = MicrostructureEngine()
-        state = engine.update(
-            timestamp=time.time(), bid=2800.0, ask=2800.5,
-            last_price=2800.25, volume=10.0,
-        )
-        assert hasattr(state, "ofi_normalized")
-        d = engine.to_dict()
-        assert "ofi_normalized" in d
-
-
 # ─── Position Sizer Improvements ─────────────────────────────────────────────
 
 

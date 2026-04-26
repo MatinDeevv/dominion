@@ -89,7 +89,7 @@ def test_backtest_report_prints_without_error(capsys) -> None:
     report.print_summary()
 
     captured = capsys.readouterr()
-    assert "Aphelion Phase 7 Backtest Report" in captured.out
+    assert "backtest_report_summary" in captured.out
 
 
 def test_backtest_report_to_dict_has_required_keys() -> None:

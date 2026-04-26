@@ -318,7 +318,7 @@ class TitanGate:
     Runs all validators and produces a GateReport.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._perf = PerformanceValidator()
         self._stability = StabilityValidator()
         self._stress = StressValidator()

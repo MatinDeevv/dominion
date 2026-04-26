@@ -51,6 +51,7 @@ NATIVE_BAR_TFS = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"]
 STEP_LOG_TAIL_LINES = 2_000
 
 console = Console()
+console_emit = console.print
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -117,7 +118,7 @@ def _ensure_deps() -> None:
     try:
         import MetaTrader5  # noqa: F401
     except ImportError:
-        console.print("[yellow]  MetaTrader5 not found — installing dependencies...[/]")
+        console_emit("[yellow]  MetaTrader5 not found — installing dependencies...[/]")
         subprocess.run(
             [sys.executable, "-m", "pip", "install", "-q", "-e", "."],
             check=True,
@@ -179,8 +180,8 @@ def _write_step_failure_log(
 
 
 def _show_banner() -> None:
-    console.print()
-    console.print(
+    console_emit()
+    console_emit(
         Panel.fit(
             "[bold bright_cyan]MT5 DATA PIPELINE[/]\n"
             "[dim]Atomic Writes  ·  Auto-Retry  ·  Step Timeouts  ·  Embargo Splits[/]\n"
@@ -189,7 +190,7 @@ def _show_banner() -> None:
             padding=(1, 8),
         )
     )
-    console.print()
+    console_emit()
 
 
 # ---------------------------------------------------------------------------
@@ -208,12 +209,12 @@ def _detect_phase(config_path: Path):
 
     for broker_id in cfg.broker_ids():
         broker_cfg = cfg.get_broker(broker_id)
-        console.print(f"  Scanning [bold]{broker_id}[/] ...", end=" ")
+        console_emit(f"  Scanning [bold]{broker_id}[/] ...", end=" ")
         caps = detect_broker(broker_cfg, symbols)
         if caps.connected:
-            console.print("[bold green]✓ Connected[/]")
+            console_emit("[bold green]✓ Connected[/]")
         else:
-            console.print(f"[bold red]✗ Failed[/]  ({caps.error})")
+            console_emit(f"[bold red]✗ Failed[/]  ({caps.error})")
         all_caps.append(caps)
 
     return all_caps, cfg, symbols
@@ -663,7 +664,7 @@ def _make_layout() -> Layout:
 
 def run() -> int:
     if os.name != "nt":
-        console.print("[red]This pipeline requires Windows (MT5 is Windows-only).[/]")
+        console_emit("[red]This pipeline requires Windows (MT5 is Windows-only).[/]")
         return 2
 
     _show_banner()
@@ -671,55 +672,55 @@ def run() -> int:
     # --- config ---
     config_path = _find_config()
     if not config_path.exists():
-        console.print(f"[red]Config not found:[/] {config_path}")
-        console.print("[dim]Create data/config/pipeline.yaml with your broker terminal_path entries.[/]")
+        console_emit(f"[red]Config not found:[/] {config_path}")
+        console_emit("[dim]Create data/config/pipeline.yaml with your broker terminal_path entries.[/]")
         return 2
-    console.print(f"  Config   [dim]{config_path}[/]")
-    console.print()
+    console_emit(f"  Config   [dim]{config_path}[/]")
+    console_emit()
 
     # --- deps ---
     _ensure_deps()
 
     # --- detection ---
     console.rule("[bold bright_blue] Broker Detection [/]")
-    console.print()
+    console_emit()
 
     try:
         all_caps, cfg, symbols = _detect_phase(config_path)
     except Exception as exc:
-        console.print(f"\n[bold red]Detection failed:[/] {exc}")
-        console.print("[dim]Make sure both MT5 terminals are open and logged in.[/]")
+        console_emit(f"\n[bold red]Detection failed:[/] {exc}")
+        console_emit("[dim]Make sure both MT5 terminals are open and logged in.[/]")
         return 3
 
-    console.print()
+    console_emit()
 
     for caps in all_caps:
-        console.print(_broker_panel(caps))
-        console.print()
+        console_emit(_broker_panel(caps))
+        console_emit()
 
     connected = [c for c in all_caps if c.connected]
     if len(connected) < 2:
-        console.print("[bold red]✗ Need at least 2 connected broker terminals.[/]")
-        console.print("  Open both MT5 terminals in Windows, log in, then run again.")
+        console_emit("[bold red]✗ Need at least 2 connected broker terminals.[/]")
+        console_emit("  Open both MT5 terminals in Windows, log in, then run again.")
         return 3
 
-    console.print("[bold green]✓ Successfully connected to both broker terminals![/]")
-    console.print()
+    console_emit("[bold green]✓ Successfully connected to both broker terminals![/]")
+    console_emit()
 
     # --- auto plan ---
     plan = _compute_plan(all_caps, cfg, config_path, symbols)
     steps = _build_steps(plan)
 
-    console.print(_plan_panel(plan, len(steps)))
-    console.print()
+    console_emit(_plan_panel(plan, len(steps)))
+    console_emit()
 
     # --- countdown ---
     console.rule("[bold bright_yellow] Launching Pipeline [/]")
     for tick in range(3, 0, -1):
-        console.print(f"  [bold bright_yellow]{tick}...[/]", end="\r")
+        console_emit(f"  [bold bright_yellow]{tick}...[/]", end="\r")
         time.sleep(1)
-    console.print(f"  [bold bright_green]GO!{'':.<30}[/]")
-    console.print()
+    console_emit(f"  [bold bright_green]GO!{'':.<30}[/]")
+    console_emit()
 
     # --- execution TUI ---
     overall = Progress(
@@ -815,7 +816,7 @@ def run() -> int:
 
                 render(idx, step.name)
     except KeyboardInterrupt:
-        console.print("\n[bold yellow]Pipeline interrupted by user (Ctrl+C).[/]")
+        console_emit("\n[bold yellow]Pipeline interrupted by user (Ctrl+C).[/]")
 
     # --- summary ---
     elapsed = time.time() - started
@@ -823,7 +824,7 @@ def run() -> int:
     h, m = divmod(m, 60)
     elapsed_str = f"{h}h {m:02d}m {s:02d}s" if h else f"{m}m {s:02d}s"
 
-    console.print()
+    console_emit()
     summary = Table(title="[bold]Run Summary[/]", border_style="bright_blue")
     summary.add_column("Metric", style="bold")
     summary.add_column("Value")
@@ -831,22 +832,22 @@ def run() -> int:
     summary.add_row("Succeeded", f"[green]{success_count}[/]")
     summary.add_row("Failed", f"[red]{len(failures)}[/]" if failures else "[dim]0[/]")
     summary.add_row("Duration", elapsed_str)
-    console.print(summary)
+    console_emit(summary)
 
     if failures:
-        console.print()
+        console_emit()
         ftbl = Table(title="[bold red]Failed Steps[/]", border_style="red")
         ftbl.add_column("Step")
         ftbl.add_column("Exit Code", justify="right")
         ftbl.add_column("Failure Log")
         for fail in failures:
             ftbl.add_row(fail.name, str(fail.code), str(fail.log_path))
-        console.print(ftbl)
-        console.print("\n[bold yellow]Tip:[/] open the failure log file above for full traceback and command output.")
+        console_emit(ftbl)
+        console_emit("\n[bold yellow]Tip:[/] open the failure log file above for full traceback and command output.")
         return 1
 
-    console.print()
-    console.print("[bold bright_green]✓ Pipeline completed — all data downloaded and processed.[/]")
+    console_emit()
+    console_emit("[bold bright_green]✓ Pipeline completed — all data downloaded and processed.[/]")
     return 0
 
 

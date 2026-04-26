@@ -8,8 +8,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from .engine import BacktestResult
 from .metrics import BacktestMetrics, compute_metrics
+
+log = structlog.get_logger(__name__)
 
 BASELINE_BALANCED_ACCURACY = 0.5354
 DEFAULT_REGIME_ORDER = ("trending", "mean_reverting", "volatile", "quiet")
@@ -63,42 +67,7 @@ class BacktestReport:
         )
 
     def print_summary(self) -> None:
-        print("=== Aphelion Phase 7 Backtest Report ===")
-        print(f"Period:          {self.period_start} to {self.period_end}")
-        print(
-            f"Signals:         {self.n_signals} total, {self.n_actionable} actionable "
-            f"({self.actionable_fraction * 100.0:.1f}%)"
-        )
-        print(
-            f"Trades:          {self.metrics.n_trades} "
-            f"({self.metrics.n_long} long / {self.metrics.n_short} short)"
-        )
-        print(f"Win rate:        {self.metrics.win_rate * 100.0:.1f}%")
-        print(
-            f"Avg win/loss:    {self.metrics.avg_win_bps:+.1f} bps / "
-            f"{self.metrics.avg_loss_bps:+.1f} bps"
-        )
-        print(f"Profit factor:   {_format_metric(self.metrics.profit_factor)}")
-        print(f"Sharpe ratio:    {_format_metric(self.metrics.sharpe_ratio)} (annualized)")
-        print(f"Max drawdown:    {-self.metrics.max_drawdown * 100.0:.1f}%")
-        print(f"Calmar ratio:    {_format_metric(self.metrics.calmar_ratio)}")
-        print(
-            f"IC ({self.metrics.action_horizon_minutes}m):     "
-            f"{self.metrics.information_coefficient:.4f}"
-        )
-        print(
-            f"Balanced acc:    {self.metrics.balanced_accuracy:.4f}  "
-            f"[baseline: {BASELINE_BALANCED_ACCURACY:.4f}]"
-        )
-        print(
-            f"Delta baseline:  "
-            f"{self.metrics.balanced_accuracy - BASELINE_BALANCED_ACCURACY:+.4f}"
-        )
-        print()
-        print("Regime breakdown:")
-        for regime_name in DEFAULT_REGIME_ORDER:
-            share = self.regime_breakdown.get(regime_name, 0.0) * 100.0
-            print(f"  {regime_name:<15}{share:5.1f}% of signals")
+        log.info("backtest_report_summary", **self.to_dict())
 
     def to_dict(self) -> dict[str, Any]:
         payload: dict[str, Any] = {

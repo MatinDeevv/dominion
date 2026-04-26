@@ -1,11 +1,12 @@
-"""Compatibility exports for the legacy feature-engine path."""
+"""Archived compatibility package for the removed feature system."""
 
-__all__ = ["FeatureEngine"]
+_MESSAGE = (
+    "aphelion.features is archived. "
+    "Import from aphelion.feature_engine.features instead."
+)
+
+__all__: list[str] = []
 
 
-def __getattr__(name: str):
-    if name == "FeatureEngine":
-        from aphelion.features.engine import FeatureEngine
-
-        return FeatureEngine
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+def __getattr__(name: str) -> object:
+    raise ImportError(_MESSAGE)

@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+import structlog
+
 from aphelion.paper.feed import FeedConfig, FeedMode
 from aphelion.paper.runner import PaperRunner, PaperRunnerConfig
 from aphelion.paper.session import PaperSessionConfig
@@ -35,6 +37,8 @@ try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover - optional dependency
     load_dotenv = None
+
+log = structlog.get_logger(__name__)
 
 
 def _load_env() -> None:
@@ -191,7 +195,7 @@ async def _run_paper_from_args(args: argparse.Namespace) -> int:
 
     try:
         result = await runner.run()
-        print("\n" + result.summary())
+        log.info("paper_run_summary", summary=result.summary())
         return 0
     except asyncio.CancelledError:
         logger.info("Run cancelled - shutting down gracefully")
@@ -266,7 +270,7 @@ def _start_training_subprocess(train_full: bool, symbol: str = "XAUUSD") -> subp
 
     if not data_path:
         raise FileNotFoundError(
-            f"No real data found for {symbol}. Run aphelion_data.py first to fetch and prepare data."
+            f"No real data found for {symbol}. Run scripts/fetch_all.py and scripts/build_features.py first."
         )
 
     cmd = [sys.executable, "scripts/train_hydra.py", "--data", data_path]

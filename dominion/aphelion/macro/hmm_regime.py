@@ -101,11 +101,11 @@ class HMMRegimeDetector:
 
         # Online: update with each new bar
         state = detector.update(current_return, current_vol, current_volume)
-        print(state.regime_label, state.confidence)
+        state.regime_label, state.confidence
 
         # Inspect learned regimes
         for info in detector.regime_info():
-            print(info)
+            info
     """
 
     def __init__(self, config: Optional[HMMConfig] = None):

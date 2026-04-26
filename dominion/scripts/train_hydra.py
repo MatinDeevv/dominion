@@ -44,7 +44,7 @@ from aphelion.intelligence.hydra.trainer import HydraTrainer, TrainerConfig
 def load_real_data(csv_path: str) -> pd.DataFrame:
     """
     Load real OHLCV data from a CSV exported by export_mt5_data.py
-    or by the richer bulk downloader in aphelion_data.py.
+    or by the richer bulk downloader in scripts/fetch_all.py.
     """
     logger.info(f"Loading real market data from {csv_path}...")
     df = pd.read_csv(csv_path)

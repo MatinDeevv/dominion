@@ -8,7 +8,6 @@ import pytest
 from aphelion.core.config import EventTopic, SENTINEL, Timeframe
 from aphelion.core.data_layer import Bar, DataLayer, Tick
 from aphelion.core.event_bus import Event, EventBus, Priority
-from aphelion.features.engine import FeatureEngine
 
 
 def build_ticks(n_ticks: int = 200) -> list[Tick]:
@@ -119,29 +118,6 @@ async def test_multiple_timeframes():
 
 
 @pytest.mark.asyncio
-async def test_feature_engine_wired_to_data_layer():
-    bus = EventBus()
-    data_layer = DataLayer(bus)
-    fe = FeatureEngine(data_layer)
-    emitted_features: list[dict] = []
-
-    async def on_bar(event: Event) -> None:
-        emitted_features.append(fe.on_bar(event.data))
-
-    bus.subscribe(EventTopic.BAR, on_bar)
-    await bus.start()
-
-    for tick in build_ticks(200):
-        await data_layer.process_tick(tick)
-
-    await asyncio.sleep(0.1)
-    await bus.stop()
-
-    assert emitted_features
-    assert "vpin" in emitted_features[-1]
-
-
-@pytest.mark.asyncio
 async def test_event_bus_priority():
     bus = EventBus()
     processed_order: list[Priority] = []
@@ -178,28 +154,6 @@ async def test_event_bus_priority():
 def test_sentinel_limits_immutable():
     with pytest.raises((AttributeError, TypeError)):
         SENTINEL.max_position_pct = 0.03  # type: ignore[misc]
-
-
-@pytest.mark.asyncio
-async def test_full_stack_no_exception():
-    bus = EventBus()
-    data_layer = DataLayer(bus)
-    fe = FeatureEngine(data_layer)
-
-    async def on_bar(event: Event) -> None:
-        fe.on_bar(event.data)
-
-    bus.subscribe(EventTopic.BAR, on_bar)
-    await bus.start()
-
-    for tick in build_ticks(500):
-        await data_layer.process_tick(tick)
-
-    await asyncio.sleep(0.2)
-    await bus.stop()
-
-    assert data_layer.get_bars(Timeframe.M1, count=1000)
-    assert bus.stats["errors"] == 0
 
 
 @pytest.mark.asyncio

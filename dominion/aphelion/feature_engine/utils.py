@@ -97,7 +97,7 @@ def recursive_serialize(value: Any) -> Any:
         return {"__deque__": list(value), "maxlen": value.maxlen}
     if isinstance(value, tuple):
         return {"__tuple__": [recursive_serialize(item) for item in value]}
-    if is_dataclass(value):
+    if is_dataclass(value) and not isinstance(value, type):
         return recursive_serialize(asdict(value))
     if isinstance(value, dict):
         return {str(key): recursive_serialize(item) for key, item in value.items()}

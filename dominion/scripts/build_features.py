@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Materialize the feature engine over stored bars → FeatureSnapshot parquet set.
 
-Replaces the feature-build section of the retired `aphelion_data.py` monolith.
+Replaces the feature-build section of the retired data monolith.
 """
 from __future__ import annotations
 

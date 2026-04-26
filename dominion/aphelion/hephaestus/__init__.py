@@ -17,7 +17,7 @@ Quick start::
         longCondition = ta.crossover(rsi, 30)
         shortCondition = ta.crossunder(rsi, 70)
     ''')
-    print(result.status)
+    result.status
 """
 
 from __future__ import annotations

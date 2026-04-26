@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Sequence, Type
 
-from ..events import BarCloseEvent, CrossAssetAlignedEvent, MarketEvent, NewsEvent, SessionEvent, TickEvent
+from ..events import BarCloseEvent, CrossAssetAlignedEvent, CrossAssetBarEvent, MarketEvent, NewsEvent, SessionEvent, TickEvent
+from ..state import FeatureStateStore
 from ..utils import recursive_restore, recursive_serialize
 
 
@@ -16,22 +17,22 @@ class FeatureScope:
 
 @dataclass(slots=True)
 class FeatureContext:
-    state_store: object
+    state_store: FeatureStateStore
     primary_symbol: str
     event: MarketEvent
     default_timeframe: str
     time_zone: str = "UTC"
 
-    def latest_tick(self, symbol: str):
+    def latest_tick(self, symbol: str) -> TickEvent | None:
         return self.state_store.latest_tick(symbol)
 
-    def latest_bar(self, symbol: str, timeframe: str):
+    def latest_bar(self, symbol: str, timeframe: str) -> BarCloseEvent | CrossAssetBarEvent | None:
         return self.state_store.latest_bar(symbol, timeframe)
 
-    def current_session(self, symbol: str):
+    def current_session(self, symbol: str) -> SessionEvent | None:
         return self.state_store.sessions.get(symbol)
 
-    def active_news(self):
+    def active_news(self) -> NewsEvent | None:
         return self.state_store.active_news
 
 
@@ -70,7 +71,7 @@ class BaseFeature(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def update(self, event: MarketEvent, state: dict[str, Any], context: FeatureContext) -> None:
+    def update(self, event: Any, state: dict[str, Any], context: FeatureContext) -> None:
         raise NotImplementedError
 
     @abstractmethod

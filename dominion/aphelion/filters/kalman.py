@@ -106,7 +106,7 @@ class KalmanFilter:
         kf = KalmanFilter(KalmanConfig(state_dim=2))
         for price in prices:
             state = kf.update(price)
-            print(state.level, state.velocity)
+            state.level, state.velocity
     """
 
     def __init__(self, config: Optional[KalmanConfig] = None):

@@ -215,8 +215,8 @@ class AlmgrenChrissSolver:
             volatility=0.01,
         )
 
-        print(plan.trade_schedule)
-        print(f"Expected cost: {plan.expected_cost:.2f}")
+        plan.trade_schedule
+        plan.expected_cost
     """
 
     def __init__(self, config: Optional[ExecutionConfig] = None):

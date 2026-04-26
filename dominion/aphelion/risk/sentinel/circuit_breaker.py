@@ -29,7 +29,7 @@ class CircuitBreaker:
         l2_threshold: float | None = None,
         l3_threshold: float | None = None,
         cooldown_seconds: float = 300.0,  # 5 min cooldown after recovery
-    ):
+    ) -> None:
         self._event_bus = event_bus
         self._state: str = "NORMAL"
         self._peak_equity: float = 0.0

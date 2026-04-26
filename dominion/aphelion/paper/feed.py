@@ -187,7 +187,7 @@ class FeedStats:
             self.ticks_per_minute = self._minute_tick_count * 60.0 / elapsed
             self._minute_tick_count = 0
             self._minute_start = now
-        self.uptime_seconds = now - self._start_time
+        self.uptime_seconds = max(now - self._start_time, 1e-9)
 
     def record_bar(self) -> None:
         self.bars_emitted += 1

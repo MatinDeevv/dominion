@@ -13,6 +13,7 @@ from mt5pipe.utils.logging import setup_logging
 
 status_app = typer.Typer(help="Status and storage validation")
 console = Console()
+console_emit = console.print
 
 
 @status_app.command("show")
@@ -57,7 +58,7 @@ def show_status(
                 f"{cp.rows_ingested:,}",
                 cp.status,
             )
-        console.print(table)
+        console_emit(table)
     else:
         typer.echo("No checkpoints found.")
 

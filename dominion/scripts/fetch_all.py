@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Ingest all historical MT5 data (ticks + bars) via mt5pipe.backfill.
 
-Replaces the fetch section of the retired `aphelion_data.py` monolith.
+Replaces the fetch section of the retired data monolith.
 """
 from __future__ import annotations
 

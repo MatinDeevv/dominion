@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterable
 
+from .features.base import BaseFeature
+
 
 class MissingDataAction(str, Enum):
     EMIT_NONE = "emit_none"
@@ -34,10 +36,10 @@ class MissingDataPolicy:
 
 @dataclass(slots=True)
 class WarmupManager:
-    def feature_ready(self, feature: object, state: dict) -> bool:
+    def feature_ready(self, feature: BaseFeature, state: dict) -> bool:
         return bool(feature.ready(state))
 
-    def warmup_complete(self, features: Iterable[object], states: Iterable[dict]) -> bool:
+    def warmup_complete(self, features: Iterable[BaseFeature], states: Iterable[dict]) -> bool:
         return all(feature.ready(state) for feature, state in zip(features, states))
 
 
@@ -48,7 +50,7 @@ class FeatureVersionManager:
     pair_separator: str = "@"
     cached: str | None = field(default=None, init=False)
 
-    def resolve(self, features: Iterable[object]) -> str:
+    def resolve(self, features: Iterable[BaseFeature]) -> str:
         pairs = sorted(f"{feature.name}{self.pair_separator}{feature.version}" for feature in features)
         self.cached = f"{self.prefix}{self.separator}" + self.separator.join(pairs)
         return self.cached

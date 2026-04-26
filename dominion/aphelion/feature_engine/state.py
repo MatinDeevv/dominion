@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable, cast
 
 from .events import (
     BarCloseEvent,
@@ -35,7 +35,7 @@ class FeatureStateStore:
     pending_snapshot_targets: set[tuple[str, str, int]] = field(default_factory=set)
     last_seq_no: int = 0
 
-    def get_or_create(self, key: FeatureStateKey, factory: callable) -> dict[str, Any]:
+    def get_or_create(self, key: FeatureStateKey, factory: Callable[[], dict[str, Any]]) -> dict[str, Any]:
         if key not in self.feature_states:
             self.feature_states[key] = factory()
         return self.feature_states[key]
@@ -102,23 +102,28 @@ class FeatureStateStore:
             self.feature_states[FeatureStateKey(feature_name, symbol, timeframe)] = recursive_restore(state)
 
         self.latest_ticks = {
-            symbol: event_from_record(record) for symbol, record in payload.get("latest_ticks", {}).items()
+            symbol: cast(TickEvent, event_from_record(record))
+            for symbol, record in payload.get("latest_ticks", {}).items()
         }
         self.latest_bars = {}
         for serialized_key, record in payload.get("latest_bars", {}).items():
             symbol, timeframe = serialized_key.split("|", 1)
-            self.latest_bars[(symbol, timeframe)] = event_from_record(record)
+            self.latest_bars[(symbol, timeframe)] = cast(BarCloseEvent | CrossAssetBarEvent, event_from_record(record))
 
         self.bars_by_timestamp = defaultdict(dict)
         for serialized_key, bars in payload.get("bars_by_timestamp", {}).items():
             timeframe, ts_text = serialized_key.split("|", 1)
             self.bars_by_timestamp[(timeframe, int(ts_text))] = {
-                symbol: event_from_record(record) for symbol, record in bars.items()
+                symbol: cast(BarCloseEvent | CrossAssetBarEvent, event_from_record(record))
+                for symbol, record in bars.items()
             }
 
-        self.sessions = {symbol: event_from_record(record) for symbol, record in payload.get("sessions", {}).items()}
+        self.sessions = {
+            symbol: cast(SessionEvent, event_from_record(record))
+            for symbol, record in payload.get("sessions", {}).items()
+        }
         active_news = payload.get("active_news")
-        self.active_news = event_from_record(active_news) if active_news else None
+        self.active_news = cast(NewsEvent, event_from_record(active_news)) if active_news else None
         self.pending_snapshot_targets = {tuple(item) for item in payload.get("pending_snapshot_targets", [])}
         self.last_seq_no = int(payload.get("last_seq_no", 0))
 

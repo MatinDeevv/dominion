@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import polars as pl
+import structlog
 import torch
 from torch import Tensor
 
@@ -24,6 +25,8 @@ from machinelearning.data.schema import (
 
 from .base import AphelionModel
 from .interpret import VSNInterpreter
+
+log = structlog.get_logger(__name__)
 
 
 def _filter_past_columns(columns: list[str]) -> list[str]:
@@ -223,30 +226,23 @@ class AblationRunner:
 
         table = self.comparison_table(results)
         if table.is_empty():
-            print("=== Feature Family Ablation Summary ===")
-            print("No ablation results available.")
+            log.info("feature_family_ablation_summary_empty")
             return
 
         config_names = [result.config.name for result in results]
-        family_names = table.get_column("family_name").to_list()
-        family_width = max(len("Family"), max(len(name) for name in family_names))
-        value_width = max(8, max(len(name) for name in config_names))
-
-        header = f"{'Family':<{family_width}} " + " ".join(
-            f"{name:>{value_width}}" for name in config_names
+        rows = [
+            {
+                key: float(value) if key != "family_name" else value
+                for key, value in row.items()
+            }
+            for row in table.iter_rows(named=True)
+        ]
+        log.info(
+            "feature_family_ablation_summary",
+            config_names=config_names,
+            rows=rows,
+            key_question="does disagreement/* rank above time/* in the full model?",
         )
-        separator = f"{'-' * family_width} " + " ".join("-" * value_width for _ in config_names)
-
-        print("=== Feature Family Ablation Summary ===")
-        print(header)
-        print(separator)
-        for row in table.iter_rows(named=True):
-            print(
-                f"{row['family_name']:<{family_width}} "
-                + " ".join(f"{float(row[name]):>{value_width}.3f}" for name in config_names)
-            )
-        print("")
-        print("Key question: does disagreement/* rank above time/* in the full model?")
 
     @staticmethod
     def _clone_batch(value: object) -> object:
