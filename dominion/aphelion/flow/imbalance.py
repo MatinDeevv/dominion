@@ -3,6 +3,10 @@ FLOW Bid-Ask Imbalance Tracker
 Detects aggressive buying/selling pressure.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from collections import deque
 from typing import Optional
@@ -32,6 +36,7 @@ class ImbalanceTracker:
 
     def update(self, buy_volume: float, sell_volume: float) -> ImbalanceState:
         """Update with new volume split."""
+        log.debug("function_entered", function="ImbalanceTracker.update")
         total = buy_volume + sell_volume
         if total <= 0:
             return self._state
@@ -61,5 +66,6 @@ class ImbalanceTracker:
         return self._state
 
     def reset(self) -> None:
+        log.debug("function_entered", function="ImbalanceTracker.reset")
         self._history.clear()
         self._state = ImbalanceState()

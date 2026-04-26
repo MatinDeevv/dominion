@@ -3,6 +3,10 @@ APHELION System Configuration
 All system constants, SENTINEL hard limits, session times, and resource allocations.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Final
@@ -28,6 +32,7 @@ class SessionWindow:
 
     def adjusted(self, offset_minutes: int = 0) -> "SessionWindow":
         """Return a new SessionWindow shifted by *offset_minutes* (e.g. -60 for summer DST)."""
+        log.debug("function_entered", function="SessionWindow.adjusted")
         if offset_minutes == 0:
             return self
         o = self.open_hour * 60 + self.open_minute + offset_minutes

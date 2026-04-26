@@ -3,6 +3,10 @@ MACRO Gold Seasonality Patterns
 Historical seasonal tendencies for XAU/USD.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from typing import Optional
@@ -60,6 +64,7 @@ class GoldSeasonality:
 
     def get_bias(self, dt: Optional[datetime] = None) -> SeasonalBias:
         """Get seasonal bias for a given date."""
+        log.debug("function_entered", function="GoldSeasonality.get_bias")
         if dt is None:
             dt = datetime.now(timezone.utc)
 

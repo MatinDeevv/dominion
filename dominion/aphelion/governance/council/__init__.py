@@ -2,6 +2,10 @@
 SOLA — Sovereign Intelligence Layer
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from .sola import (
     SOLA,
     SOLAMode,

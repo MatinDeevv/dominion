@@ -6,6 +6,10 @@ Nothing goes to production without TITAN's approval.
 Runs performance, stability, stress, regression, and latency checks.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -81,6 +85,7 @@ class PerformanceValidator:
         num_trades: int | None = None,
         total_trades: int | None = None,
     ) -> List[ValidationResult]:
+        log.debug("function_entered", function="PerformanceValidator.validate")
         trade_count = total_trades if total_trades is not None else (num_trades or 0)
         results = []
 
@@ -116,6 +121,7 @@ class StabilityValidator:
         fold_sharpes: List[float],
         min_folds: int = 12,
     ) -> List[ValidationResult]:
+        log.debug("function_entered", function="StabilityValidator.validate")
         import numpy as np
 
         results = []
@@ -162,6 +168,7 @@ class StressValidator:
         mc_max_p1_drawdown: Optional[float] = None,
         min_stress_pass_rate: float = 0.80,
     ) -> List[ValidationResult]:
+        log.debug("function_entered", function="StressValidator.validate")
         import numpy as np
 
         results = []
@@ -232,6 +239,7 @@ class RegressionValidator:
         current_metrics: Optional[Dict[str, float]] = None,
         max_regression_pct: float = 0.10,
     ) -> List[ValidationResult]:
+        log.debug("function_entered", function="RegressionValidator.validate")
         if isinstance(current_sharpe, dict) or isinstance(baseline_sharpe, dict):
             baseline_metrics = current_sharpe if isinstance(current_sharpe, dict) else baseline_metrics
             current_metrics = baseline_sharpe if isinstance(baseline_sharpe, dict) else current_metrics
@@ -283,6 +291,7 @@ class LatencyValidator:
         max_total_p99_ms: float = 500.0,
         max_single_p99_ms: float = 200.0,
     ) -> List[ValidationResult]:
+        log.debug("function_entered", function="LatencyValidator.validate")
         if isinstance(p99_latency_ms, dict) and latency_buckets is None:
             latency_buckets = p99_latency_ms
             p99_latency_ms = None
@@ -345,6 +354,7 @@ class TitanGate:
         p99_latency_ms: float = 0.0,
     ) -> GateReport:
         """Run all quality checks and return a GateReport."""
+        log.debug("function_entered", function="TitanGate.run_full_gate")
         import time
         start = time.time()
 

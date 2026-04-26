@@ -6,6 +6,10 @@ Detects institutional order flow, accumulation/distribution zones,
 and liquidity sweeps that precede major moves in XAU/USD.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from .analyzer import FlowAnalyzer, FlowSignal
 from .liquidity import LiquidityZoneDetector, LiquidityZone
 from .orderflow import OrderFlowAnalyzer

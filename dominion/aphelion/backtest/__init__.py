@@ -1,5 +1,9 @@
 """APHELION backtest package."""
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 __all__ = [
     # Engine
     "BacktestEngine",

@@ -1,5 +1,9 @@
 """Public exports for the Phase 7 signal layer."""
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 __all__ = [
     "ConformalCalibrator",
     "KellyPositionSizer",

@@ -6,6 +6,7 @@ import datetime as dt
 
 import polars as pl
 
+from mt5pipe.ingestion.bars import fetch_bars_chunk, store_bars_by_date
 from mt5pipe.mt5.connection import MT5Connection
 from mt5pipe.storage.parquet_store import ParquetStore
 from mt5pipe.storage.paths import StoragePaths
@@ -13,6 +14,37 @@ from mt5pipe.utils.logging import get_logger
 from mt5pipe.utils.time import utc_now
 
 log = get_logger(__name__)
+
+
+def fetch_history_bars(
+    conn: MT5Connection,
+    symbol: str,
+    timeframe: str,
+    date_from: dt.datetime,
+    date_to: dt.datetime,
+) -> pl.DataFrame:
+    """Fetch historical native bars through the history ingestion facade."""
+    log.info(
+        "history_bars_fetch_start",
+        broker=conn.broker_id,
+        symbol=symbol,
+        timeframe=timeframe,
+        date_from=date_from.isoformat(),
+        date_to=date_to.isoformat(),
+    )
+    return fetch_bars_chunk(conn, symbol, timeframe, date_from, date_to)
+
+
+def store_history_bars_by_date(
+    df: pl.DataFrame,
+    broker_id: str,
+    symbol: str,
+    timeframe: str,
+    paths: StoragePaths,
+    store: ParquetStore,
+) -> int:
+    """Store historical bars partitioned with the native bar layout."""
+    return store_bars_by_date(df, broker_id, symbol, timeframe, paths, store)
 
 
 def _ts_field(val: int | float | None) -> dt.datetime | None:

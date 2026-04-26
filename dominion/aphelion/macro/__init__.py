@@ -6,6 +6,10 @@ Provides regime classification, economic event awareness, DXY correlation,
 and seasonality context. Commander-tier ARES voter.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from .analyzer import MacroAnalyzer, MacroSignal
 from .regime import RegimeClassifier, Regime
 from .dxy import DXYMonitor, DXYBias

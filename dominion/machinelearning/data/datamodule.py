@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from pathlib import Path
 import random
 from typing import Any
@@ -111,6 +115,7 @@ class AphelionDataModule(pl.LightningDataModule):
 
     def setup(self, stage: str | None = None) -> None:
         """Load split directories, fit the train-only normalizer, and build datasets."""
+        log.debug("function_entered", function="AphelionDataModule.setup")
 
         if self._is_setup:
             return
@@ -158,6 +163,7 @@ class AphelionDataModule(pl.LightningDataModule):
 
     def train_dataloader(self) -> DataLoader:
         """Return the shuffled training dataloader."""
+        log.debug("function_entered", function="AphelionDataModule.train_dataloader")
 
         if self.train_dataset is None:
             raise RuntimeError("setup() must be called before requesting train_dataloader().")
@@ -174,6 +180,7 @@ class AphelionDataModule(pl.LightningDataModule):
 
     def val_dataloader(self) -> DataLoader:
         """Return the validation dataloader."""
+        log.debug("function_entered", function="AphelionDataModule.val_dataloader")
 
         if self.val_dataset is None:
             raise RuntimeError("setup() must be called before requesting val_dataloader().")
@@ -190,6 +197,7 @@ class AphelionDataModule(pl.LightningDataModule):
 
     def test_dataloader(self) -> DataLoader:
         """Return the test dataloader."""
+        log.debug("function_entered", function="AphelionDataModule.test_dataloader")
 
         if self.test_dataset is None:
             raise RuntimeError("setup() must be called before requesting test_dataloader().")

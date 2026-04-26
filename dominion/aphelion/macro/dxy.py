@@ -3,6 +3,10 @@ MACRO DXY Correlation Monitor
 Tracks USD Index correlation with gold.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
@@ -43,6 +47,7 @@ class DXYMonitor:
         prev_gold: Optional[float] = None, prev_dxy: Optional[float] = None,
     ) -> DXYState:
         """Update with latest gold and DXY prices."""
+        log.debug("function_entered", function="DXYMonitor.update")
         if prev_gold and prev_gold > 0:
             self._gold_returns.append((gold_price - prev_gold) / prev_gold)
         if prev_dxy and prev_dxy > 0:
@@ -89,6 +94,7 @@ class DXYMonitor:
 
     def compute_rolling_correlation(self) -> float:
         """Compute rolling correlation between gold and DXY returns."""
+        log.debug("function_entered", function="DXYMonitor.compute_rolling_correlation")
         n = min(len(self._gold_returns), len(self._dxy_returns), self._window)
         if n < 5:
             return -0.6  # Default assumption
@@ -103,9 +109,11 @@ class DXYMonitor:
         return corr if not np.isnan(corr) else 0.0
 
     def detect_correlation_breakdown(self) -> bool:
+        log.debug("function_entered", function="DXYMonitor.detect_correlation_breakdown")
         correlation = self.compute_rolling_correlation()
         return correlation > self._breakdown
 
     def reset(self) -> None:
+        log.debug("function_entered", function="DXYMonitor.reset")
         self._gold_returns.clear()
         self._dxy_returns.clear()

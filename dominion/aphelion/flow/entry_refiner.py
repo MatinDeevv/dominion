@@ -7,6 +7,10 @@ Refines entry timing for OMEGA swing trades using pullback analysis.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional
@@ -45,6 +49,7 @@ class EntryRefiner:
         self, current_price: float, ema_fast: float, atr: float
     ) -> EntrySetup:
         """Evaluate long entry on pullback to EMA."""
+        log.debug("function_entered", function="EntryRefiner.evaluate_long")
         pullback = (ema_fast - current_price) / ema_fast if ema_fast > 0 else 0
 
         if pullback < self._pullback:
@@ -64,6 +69,7 @@ class EntryRefiner:
         self, current_price: float, ema_fast: float, atr: float
     ) -> EntrySetup:
         """Evaluate short entry on retracement above EMA."""
+        log.debug("function_entered", function="EntryRefiner.evaluate_short")
         pullback = (current_price - ema_fast) / ema_fast if ema_fast > 0 else 0
 
         if pullback < self._pullback:

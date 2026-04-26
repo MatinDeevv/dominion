@@ -10,6 +10,10 @@ helpers so that order construction, sizing, and enforcement behave identically.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from itertools import count
 from typing import TYPE_CHECKING
 
@@ -38,6 +42,7 @@ def build_trade_proposal(order: Order, entry_price: float) -> "TradeProposal":
 
     Previously this 8-line stanza was copy-pasted in three places.
     """
+    log.debug("function_entered", function="build_trade_proposal")
     from aphelion.risk.sentinel.validator import TradeProposal
 
     direction = "LONG" if order.side == OrderSide.BUY else "SHORT"
@@ -65,6 +70,7 @@ def apply_enforcement(
     This logic was duplicated in ``BacktestEngine._apply_execution_enforcement``
     and ``PaperExecutor.submit_order``.
     """
+    log.debug("function_entered", function="apply_enforcement")
     proposal = build_trade_proposal(order, entry_price)
     approved, _reason, final_size_pct = enforcer.approve_order(proposal)
 
@@ -114,6 +120,7 @@ def build_order_from_signal(
     direction : int
         ``1`` for BUY, ``-1`` for SELL, ``0`` → returns ``None``.
     """
+    log.debug("function_entered", function="build_order_from_signal")
     if direction == 0:
         return None
 

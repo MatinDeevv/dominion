@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -87,6 +91,7 @@ class SignalRecord:
 
     def direction_for_horizon(self, horizon_minutes: int) -> int:
         """Return the stored direction aligned to a requested horizon."""
+        log.debug("function_entered", function="SignalRecord.direction_for_horizon")
 
         mapping = {
             5: self.direction_5m,
@@ -101,6 +106,7 @@ class SignalRecord:
 
     def resolved_action_direction(self) -> int:
         """Return the canonical direction the runtime should execute."""
+        log.debug("function_entered", function="SignalRecord.resolved_action_direction")
 
         if self.action_direction is not None:
             return int(self.action_direction)
@@ -108,6 +114,7 @@ class SignalRecord:
 
     def resolved_action_direction_probs(self) -> tuple[float, float, float]:
         """Return the probability triplet aligned to the execution horizon."""
+        log.debug("function_entered", function="SignalRecord.resolved_action_direction_probs")
 
         if self.action_direction_probs is not None:
             return self.action_direction_probs
@@ -115,6 +122,7 @@ class SignalRecord:
 
     def resolved_action_return_median(self) -> float:
         """Return the median return forecast aligned to the execution horizon."""
+        log.debug("function_entered", function="SignalRecord.resolved_action_return_median")
 
         if self.action_return_median is not None:
             return float(self.action_return_median)
@@ -122,6 +130,7 @@ class SignalRecord:
 
     def resolved_action_conformal_lower(self) -> float:
         """Return the lower conformal bound aligned to the execution horizon."""
+        log.debug("function_entered", function="SignalRecord.resolved_action_conformal_lower")
 
         if self.action_conformal_lower is not None:
             return float(self.action_conformal_lower)
@@ -129,6 +138,7 @@ class SignalRecord:
 
     def resolved_action_conformal_upper(self) -> float:
         """Return the upper conformal bound aligned to the execution horizon."""
+        log.debug("function_entered", function="SignalRecord.resolved_action_conformal_upper")
 
         if self.action_conformal_upper is not None:
             return float(self.action_conformal_upper)
@@ -140,6 +150,7 @@ class SignalRecord:
         A research signal is not enough on its own. This method enforces the minimum bar-quality, confidence,
         and interval-consistency checks required before the execution layer is allowed to place risk.
         """
+        log.debug("function_entered", function="SignalRecord.is_actionable")
 
         direction = self.resolved_action_direction()
         if direction == 0:

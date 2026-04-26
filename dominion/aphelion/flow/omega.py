@@ -6,6 +6,10 @@ Low win rate (28-35%), high R:R (5:1 – 8:1) trend-following strategy.
 Deliberately uncorrelated with ALPHA (M1 scalping).
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import List, Optional
 from enum import Enum
@@ -71,6 +75,7 @@ class OmegaSignalGenerator:
         regime: str = "RANGING",
     ) -> OmegaSignal:
         """Generate OMEGA signal from multi-timeframe data."""
+        log.debug("function_entered", function="OmegaSignalGenerator.generate")
 
         # Step 1: H4 structure analysis
         h4_structure = self._detect_h4_structure(h4_highs, h4_lows, h4_closes)
@@ -235,6 +240,7 @@ class OmegaExitManager:
         tp2: float,
     ) -> dict:
         """Check if any exit condition is met."""
+        log.debug("function_entered", function="OmegaExitManager.check_exit")
         result = {
             "action": "HOLD",
             "close_pct": 0.0,
@@ -279,6 +285,7 @@ class OmegaExitManager:
         return result
 
     def reset(self) -> None:
+        log.debug("function_entered", function="OmegaExitManager.reset")
         self._stage = 0
 
     @property

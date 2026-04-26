@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from datetime import datetime, timezone
 from typing import Any
 
@@ -55,6 +59,7 @@ class SignalPublisher:
         The resulting record is the exact handoff object a backtest or execution layer can trust: every field is
         scalar, traceable, and already adjusted for conformal uncertainty and position sizing.
         """
+        log.debug("function_entered", function="SignalPublisher.publish")
 
         regime_probs = _extract_regime_probs(regime_state, batch_idx=batch_idx)
         regime_names = _extract_regime_names(regime_state, expected=len(regime_probs))

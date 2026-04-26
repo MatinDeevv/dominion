@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from pathlib import Path
 
 import polars as pl
@@ -47,6 +51,7 @@ class RegimeLabeler:
         df: pl.DataFrame,
     ) -> pl.DataFrame:
         """Run rolling-window regime detection over a dataframe and return label columns."""
+        log.debug("function_entered", function="RegimeLabeler.label_dataframe")
 
         if TIME_INDEX_COLUMN not in df.columns:
             raise ValueError(f"RegimeLabeler requires '{TIME_INDEX_COLUMN}' in the input dataframe.")
@@ -88,6 +93,7 @@ class RegimeLabeler:
         output_path: Path,
     ) -> pl.DataFrame:
         """Read parquet shards, label them, persist the label sidecar, and return it."""
+        log.debug("function_entered", function="RegimeLabeler.label_parquet")
 
         parquet_root = Path(parquet_dir)
         parquet_paths = sorted(parquet_root.rglob("*.parquet"))
@@ -112,6 +118,7 @@ class RegimeLabeler:
         label_df: pl.DataFrame,
     ) -> pl.DataFrame:
         """Left join regime labels onto a dataset dataframe and fill missing rows safely."""
+        log.debug("function_entered", function="RegimeLabeler.join_labels")
 
         joined = dataset_df.join(label_df, on=TIME_INDEX_COLUMN, how="left")
         return joined.with_columns(

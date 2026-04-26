@@ -7,6 +7,10 @@ Commander-tier ARES voter. Critical: they NEVER filter or communicate
 with each other — pure independent signals.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -28,6 +32,7 @@ class HalfTrendVoter:
         self._atr_period = atr_period
 
     def vote(self, highs: np.ndarray, lows: np.ndarray, closes: np.ndarray) -> Vote:
+        log.debug("function_entered", function="HalfTrendVoter.vote")
         if len(closes) < max(self._amplitude, self._atr_period) + 1:
             return Vote(0, 0.0, "HalfTrend")
 
@@ -62,6 +67,7 @@ class EMAStackVoter:
     """EMA 8/21/50 stack alignment. Commander-tier (10 votes)."""
 
     def vote(self, closes: np.ndarray) -> Vote:
+        log.debug("function_entered", function="EMAStackVoter.vote")
         if len(closes) < 50:
             return Vote(0, 0.0, "EMAStack")
 
@@ -92,6 +98,7 @@ class VWAPPositionVoter:
     """Price position relative to VWAP. Commander-tier (10 votes)."""
 
     def vote(self, close: float, vwap: float) -> Vote:
+        log.debug("function_entered", function="VWAPPositionVoter.vote")
         if vwap <= 0:
             return Vote(0, 0.0, "VWAPPosition")
 
@@ -112,6 +119,7 @@ class BreakoutDetector:
         self, highs: np.ndarray, lows: np.ndarray, closes: np.ndarray,
         volumes: np.ndarray,
     ) -> Vote:
+        log.debug("function_entered", function="BreakoutDetector.vote")
         if len(closes) < 30:
             return Vote(0, 0.0, "Breakout")
 
@@ -150,6 +158,7 @@ class RSIExtremeVoter:
     """RSI overbought/oversold readings. Commander-tier (10 votes)."""
 
     def vote(self, rsi: float) -> Vote:
+        log.debug("function_entered", function="RSIExtremeVoter.vote")
         if rsi > 80:
             return Vote(-1, 0.7, "RSIExtreme")
         elif rsi > 70:
@@ -165,6 +174,7 @@ class StructureVoter:
     """Market structure (HH/HL vs LH/LL). Commander-tier (10 votes)."""
 
     def vote(self, highs: np.ndarray, lows: np.ndarray) -> Vote:
+        log.debug("function_entered", function="StructureVoter.vote")
         if len(highs) < 10:
             return Vote(0, 0.0, "Structure")
 
@@ -196,6 +206,7 @@ class SessionMomentumVoter:
 
     def vote(self, closes: np.ndarray, session_open_idx: int = 0) -> Vote:
         """Vote based on momentum since session open."""
+        log.debug("function_entered", function="SessionMomentumVoter.vote")
         if len(closes) < 5 or session_open_idx >= len(closes):
             return Vote(0, 0.0, "SessionMomentum")
 
@@ -241,6 +252,7 @@ class SignalTower:
         session_open_idx: int = 0,
     ) -> Dict[str, Vote]:
         """Collect all independent votes."""
+        log.debug("function_entered", function="SignalTower.collect_votes")
         votes = {}
         votes["HalfTrend"] = self.halftrend.vote(highs, lows, closes)
         votes["EMAStack"] = self.ema_stack.vote(closes)
@@ -253,6 +265,7 @@ class SignalTower:
 
     def get_aggregate(self, votes: Dict[str, Vote]) -> Vote:
         """Simple aggregation (each voter equal weight within SIGNAL TOWER)."""
+        log.debug("function_entered", function="SignalTower.get_aggregate")
         if not votes:
             return Vote(0, 0.0, "SignalTower")
 

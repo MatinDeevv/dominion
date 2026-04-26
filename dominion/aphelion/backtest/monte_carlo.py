@@ -12,6 +12,10 @@ Algorithms:
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -136,6 +140,7 @@ class MonteCarloEngine:
         initial_capital: float = 10_000.0,
         ruin_threshold_pct: float = 50.0,
     ) -> MonteCarloResults:
+        log.debug("function_entered", function="MonteCarloEngine.run")
         n_trades = len(trades)
         n_paths = self._config.num_paths
 
@@ -256,6 +261,7 @@ class MonteCarloEngine:
         Stress environment simulation by amplifying losses.
         Example: adverse_factor=1.5 means every loss is 50% worse.
         """
+        log.debug("function_entered", function="MonteCarloEngine.stress_test")
         factor = max(1.0, float(adverse_factor))
         stressed: list[BacktestTrade] = []
         for trade in trades:
@@ -298,6 +304,7 @@ class MonteCarloEngine:
         """
         Stationary block bootstrap confidence interval for Sharpe ratio.
         """
+        log.debug("function_entered", function="MonteCarloEngine.bootstrap_sharpe")
         if not daily_returns:
             return {"mean": 0.0, "std": 0.0, "p05": 0.0, "p95": 0.0}
 
@@ -411,6 +418,7 @@ class MonteCarloEngine:
 
         Returns dict with p5/p50/p95 final equity and ruin probability.
         """
+        log.debug("function_entered", function="MonteCarloEngine.gbm_paths")
         pnls = np.array([t.net_pnl for t in trades], dtype=np.float64)
         n = len(pnls)
         if n < 10:
@@ -450,6 +458,7 @@ class MonteCarloEngine:
         Compute Conditional Value-at-Risk (Expected Shortfall) across MC paths.
         alpha=0.05 → average loss in the worst 5% of paths.
         """
+        log.debug("function_entered", function="MonteCarloEngine.per_path_cvar")
         finals = all_equity[:, -1]
         returns = (finals - initial_capital) / initial_capital
         var_threshold = float(np.percentile(returns, alpha * 100))

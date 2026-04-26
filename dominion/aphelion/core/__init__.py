@@ -1,5 +1,9 @@
 """APHELION Core Infrastructure"""
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from aphelion.core.config import (
     Session, Timeframe, EventTopic, ComponentStatus, Tier,
     SENTINEL, TIMEFRAMES, MODULES, SYMBOL,

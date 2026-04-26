@@ -6,6 +6,10 @@ Provides live macro context to ARES without blocking the M1 loop.
 All feeds run async; stale data is marked and ARES ignores it.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
@@ -32,6 +36,7 @@ class FeedData:
     freshness: DataFreshness = DataFreshness.EXPIRED
 
     def update_freshness(self, now: Optional[datetime] = None) -> None:
+        log.debug("function_entered", function="FeedData.update_freshness")
         now = now or datetime.now(timezone.utc)
         if self.timestamp is None:
             self.freshness = DataFreshness.EXPIRED
@@ -56,6 +61,7 @@ class DXYFeed:
 
     def compute_gold_bias(self) -> int:
         """DXY strengthening => gold bearish; weakening => gold bullish."""
+        log.debug("function_entered", function="DXYFeed.compute_gold_bias")
         if self.trend == 1 and self.correlation_with_gold < -0.3:
             return -1   # Bearish for gold
         elif self.trend == -1 and self.correlation_with_gold < -0.3:
@@ -82,6 +88,7 @@ class COTData:
 
     def speculative_bias(self) -> int:
         """Positive = bullish positioning, negative = bearish."""
+        log.debug("function_entered", function="COTData.speculative_bias")
         net = self.net_speculative
         if net > 100_000:
             return 1
@@ -125,6 +132,7 @@ class FedCalendar:
 
     def is_near_event(self, dt: datetime, hours_before: int = 2, hours_after: int = 4) -> bool:
         """Check if we're within a dangerous event window."""
+        log.debug("function_entered", function="FedCalendar.is_near_event")
         date_str = dt.strftime("%Y-%m-%d")
         for event in self._events:
             if event["date"] == date_str:
@@ -133,6 +141,7 @@ class FedCalendar:
 
     def next_event(self, dt: datetime) -> Optional[dict]:
         """Get the next upcoming event."""
+        log.debug("function_entered", function="FedCalendar.next_event")
         date_str = dt.strftime("%Y-%m-%d")
         for event in sorted(self._events, key=lambda e: e["date"]):
             if event["date"] >= date_str:
@@ -167,6 +176,7 @@ class AtlasLive:
         self._state = AtlasState()
 
     def update_dxy(self, value: float, sma_20: float, correlation: float = -0.5) -> None:
+        log.debug("function_entered", function="AtlasLive.update_dxy")
         self._dxy.value = value
         self._dxy.sma_20 = sma_20
         self._dxy.correlation_with_gold = correlation
@@ -177,6 +187,7 @@ class AtlasLive:
         self, mm_long: int, mm_short: int,
         comm_long: int, comm_short: int,
     ) -> None:
+        log.debug("function_entered", function="AtlasLive.update_cot")
         self._cot.managed_money_long = mm_long
         self._cot.managed_money_short = mm_short
         self._cot.commercial_long = comm_long
@@ -184,6 +195,7 @@ class AtlasLive:
         self._cot.report_date = datetime.now(timezone.utc)
 
     def update_feed(self, name: str, value: float, direction: int = 0) -> None:
+        log.debug("function_entered", function="AtlasLive.update_feed")
         self._feeds[name] = FeedData(
             name=name, value=value, direction=direction,
             timestamp=datetime.now(timezone.utc),
@@ -192,6 +204,7 @@ class AtlasLive:
 
     def compute_state(self, now: Optional[datetime] = None) -> AtlasState:
         """Compute the aggregated ATLAS state for ARES."""
+        log.debug("function_entered", function="AtlasLive.compute_state")
         now = now or datetime.now(timezone.utc)
 
         # Update feed freshness

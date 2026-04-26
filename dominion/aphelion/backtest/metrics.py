@@ -16,6 +16,10 @@ New v3 algorithms:
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import math
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -35,6 +39,7 @@ def sharpe_ratio(
     trading_days: int = 252,
 ) -> float:
     """Annualised Sharpe ratio from daily returns."""
+    log.debug("function_entered", function="sharpe_ratio")
     if len(daily_returns) < 2:
         return 0.0
     arr = np.array(daily_returns, dtype=np.float64)
@@ -60,6 +65,7 @@ def deflated_sharpe_ratio(
     and finite sample length.
     Returns the probability that the observed Sharpe is genuine (0-1).
     """
+    log.debug("function_entered", function="deflated_sharpe_ratio")
     if num_trials < 1 or backtest_length_days < 2:
         return 0.0
     from scipy import stats as sp_stats  # local import — optional dep
@@ -88,6 +94,7 @@ def sortino_ratio(
     trading_days: int = 252,
 ) -> float:
     """Annualised Sortino ratio (downside risk only)."""
+    log.debug("function_entered", function="sortino_ratio")
     if len(daily_returns) < 2:
         return 0.0
     arr = np.array(daily_returns, dtype=np.float64)
@@ -109,6 +116,7 @@ def calmar_ratio(
     years: float = 1.0,
 ) -> float:
     """Calmar = annualised return / max drawdown."""
+    log.debug("function_entered", function="calmar_ratio")
     if max_drawdown_pct == 0 or years == 0:
         return 0.0
     annual_return = total_return_pct / years
@@ -120,6 +128,7 @@ def omega_ratio(
     threshold: float = 0.0,
 ) -> float:
     """Omega ratio: sum of gains above threshold / sum of losses below."""
+    log.debug("function_entered", function="omega_ratio")
     if not daily_returns:
         return 0.0
     arr = np.array(daily_returns, dtype=np.float64)
@@ -139,6 +148,7 @@ def information_ratio(
     Information Ratio: annualised excess return / tracking error.
     If no benchmark provided, uses zero benchmark (equivalent to Sharpe with rf=0).
     """
+    log.debug("function_entered", function="information_ratio")
     if len(daily_returns) < 2:
         return 0.0
     arr = np.array(daily_returns, dtype=np.float64)
@@ -163,6 +173,7 @@ def burke_ratio(
     Burke Ratio: annualised return / sqrt(sum of squared drawdowns).
     Uses the n_largest drawdowns as penalty. Lower drawdown concentration → higher Burke.
     """
+    log.debug("function_entered", function="burke_ratio")
     if len(equity_curve) < 2 or years <= 0:
         return 0.0
     arr = np.array(equity_curve, dtype=np.float64)
@@ -200,6 +211,7 @@ def ulcer_index(equity_curve: list[float]) -> float:
     Captures both depth and duration of drawdowns.
     Lower is better. Typical values: 1-5% for good strategies.
     """
+    log.debug("function_entered", function="ulcer_index")
     if len(equity_curve) < 2:
         return 0.0
     arr = np.array(equity_curve, dtype=np.float64)
@@ -213,6 +225,7 @@ def tail_ratio(daily_returns: list[float], alpha: float = 5.0) -> float:
     Tail Ratio: |p95 percentile| / |p5 percentile|.
     > 1.0 means larger upside tails than downside → positive skew in extremes.
     """
+    log.debug("function_entered", function="tail_ratio")
     if len(daily_returns) < 20:
         return 1.0
     arr = np.array(daily_returns, dtype=np.float64)
@@ -228,6 +241,7 @@ def pain_index(equity_curve: list[float]) -> float:
     Pain Index: mean percentage drawdown.
     Simpler than Ulcer Index, represents the average pain experienced.
     """
+    log.debug("function_entered", function="pain_index")
     if len(equity_curve) < 2:
         return 0.0
     arr = np.array(equity_curve, dtype=np.float64)
@@ -241,6 +255,7 @@ def gain_to_pain_ratio(daily_returns: list[float]) -> float:
     Gain-to-Pain Ratio: sum(all returns) / sum(abs(negative returns)).
     > 1.0 means gross gains exceed gross pain. Favoured by CTAs.
     """
+    log.debug("function_entered", function="gain_to_pain_ratio")
     if not daily_returns:
         return 0.0
     arr = np.array(daily_returns, dtype=np.float64)
@@ -253,6 +268,7 @@ def gain_to_pain_ratio(daily_returns: list[float]) -> float:
 
 def profit_factor(trades: list[BacktestTrade]) -> float:
     """Gross profit / gross loss."""
+    log.debug("function_entered", function="profit_factor")
     gross_profit = sum(t.net_pnl for t in trades if t.net_pnl > 0)
     gross_loss = abs(sum(t.net_pnl for t in trades if t.net_pnl < 0))
     if gross_loss == 0:
@@ -265,6 +281,7 @@ def max_drawdown(equity_curve: list[float]) -> tuple[float, int, int]:
     Maximum drawdown from an equity curve.
     Returns (max_dd_pct, peak_index, trough_index).
     """
+    log.debug("function_entered", function="max_drawdown")
     if len(equity_curve) < 2:
         return 0.0, 0, 0
     arr = np.array(equity_curve, dtype=np.float64)
@@ -287,6 +304,7 @@ def max_drawdown(equity_curve: list[float]) -> tuple[float, int, int]:
 
 def expectancy(trades: list[BacktestTrade]) -> float:
     """Average net_pnl per trade."""
+    log.debug("function_entered", function="expectancy")
     if not trades:
         return 0.0
     return sum(t.net_pnl for t in trades) / len(trades)
@@ -294,6 +312,7 @@ def expectancy(trades: list[BacktestTrade]) -> float:
 
 def win_rate(trades: list[BacktestTrade]) -> float:
     """Fraction of trades with positive net P&L."""
+    log.debug("function_entered", function="win_rate")
     if not trades:
         return 0.0
     winners = sum(1 for t in trades if t.net_pnl > 0)
@@ -302,6 +321,7 @@ def win_rate(trades: list[BacktestTrade]) -> float:
 
 def avg_risk_reward(trades: list[BacktestTrade]) -> float:
     """Average R-multiple across all trades."""
+    log.debug("function_entered", function="avg_risk_reward")
     r_vals = [t.r_multiple for t in trades if t.r_multiple != 0]
     if not r_vals:
         return 0.0
@@ -310,6 +330,7 @@ def avg_risk_reward(trades: list[BacktestTrade]) -> float:
 
 def avg_win_loss(trades: list[BacktestTrade]) -> tuple[float, float]:
     """Average winning trade and average losing trade (absolute)."""
+    log.debug("function_entered", function="avg_win_loss")
     wins = [t.net_pnl for t in trades if t.net_pnl > 0]
     losses = [t.net_pnl for t in trades if t.net_pnl < 0]
     avg_w = sum(wins) / len(wins) if wins else 0.0
@@ -319,6 +340,7 @@ def avg_win_loss(trades: list[BacktestTrade]) -> tuple[float, float]:
 
 def consecutive_stats(trades: list[BacktestTrade]) -> tuple[int, int]:
     """Max consecutive wins and max consecutive losses."""
+    log.debug("function_entered", function="consecutive_stats")
     max_wins = max_losses = 0
     cur_wins = cur_losses = 0
     for t in trades:
@@ -337,6 +359,7 @@ def consecutive_stats(trades: list[BacktestTrade]) -> tuple[int, int]:
 
 def monthly_pnl(trades: list[BacktestTrade]) -> dict[str, float]:
     """Net P&L grouped by month (YYYY-MM)."""
+    log.debug("function_entered", function="monthly_pnl")
     monthly: dict[str, float] = {}
     for t in trades:
         key = t.exit_time.strftime("%Y-%m") if isinstance(t.exit_time, datetime) else "unknown"
@@ -346,6 +369,7 @@ def monthly_pnl(trades: list[BacktestTrade]) -> dict[str, float]:
 
 def hourly_pnl(trades: list[BacktestTrade]) -> dict[int, float]:
     """Net P&L grouped by entry hour (0-23 UTC)."""
+    log.debug("function_entered", function="hourly_pnl")
     hourly: dict[int, float] = {}
     for t in trades:
         hour = t.entry_time.hour if isinstance(t.entry_time, datetime) else 0
@@ -355,6 +379,7 @@ def hourly_pnl(trades: list[BacktestTrade]) -> dict[int, float]:
 
 def exit_reason_breakdown(trades: list[BacktestTrade]) -> dict[str, int]:
     """Count of trades by exit reason."""
+    log.debug("function_entered", function="exit_reason_breakdown")
     reasons: dict[str, int] = {}
     for t in trades:
         reasons[t.exit_reason] = reasons.get(t.exit_reason, 0) + 1
@@ -445,6 +470,7 @@ def compute_metrics(
     broker_stats: Optional[dict] = None,
 ) -> BacktestMetrics:
     """Compute the full institutional metric suite from backtest results."""
+    log.debug("function_entered", function="compute_metrics")
 
     m = BacktestMetrics()
     m.total_trades = len(trades)

@@ -3,6 +3,10 @@ FLOW Liquidity Zone Detection
 Identifies institutional liquidity levels: prev-day H/L, round numbers, swing zones.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -44,6 +48,7 @@ class LiquidityZoneDetector:
         volumes: Optional[np.ndarray] = None,
     ) -> List[LiquidityZone]:
         """Detect all active liquidity zones from recent bar data."""
+        log.debug("function_entered", function="LiquidityZoneDetector.detect_zones")
         zones: List[LiquidityZone] = []
 
         if len(closes) < 2:

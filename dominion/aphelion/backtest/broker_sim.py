@@ -6,6 +6,10 @@ Every order passes through TradeValidator before acceptance.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
@@ -62,6 +66,7 @@ class BrokerSimulator:
         account_equity: float,
     ) -> tuple[Order, Optional[Fill]]:
         """Submit a market order — validate through SENTINEL first."""
+        log.debug("function_entered", function="BrokerSimulator.submit_market_order")
         if not self._validate_trade_proposal(order, current_bar, current_bar.close):
             order.status = OrderStatus.REJECTED
             return (order, None)
@@ -131,6 +136,7 @@ class BrokerSimulator:
         account_equity: float,
     ) -> list[tuple[Order, Optional[Fill]]]:
         """Check pending LIMIT/STOP orders against current bar prices."""
+        log.debug("function_entered", function="BrokerSimulator.check_pending_orders")
         results: list[tuple[Order, Optional[Fill]]] = []
 
         for order in pending_orders:
@@ -256,6 +262,7 @@ class BrokerSimulator:
         current_bar: Bar,
     ) -> list[tuple[str, float, str]]:
         """Check if any position's SL or TP was hit on this bar."""
+        log.debug("function_entered", function="BrokerSimulator.check_sl_tp")
         exits: list[tuple[str, float, str]] = []
         cfg = self._config
 
@@ -300,6 +307,7 @@ class BrokerSimulator:
         return exits
 
     def set_bar_index(self, index: int) -> None:
+        log.debug("function_entered", function="BrokerSimulator.set_bar_index")
         self._bar_index = index
 
     # ── Stats ────────────────────────────────────────────────────────────────

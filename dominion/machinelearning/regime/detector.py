@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 import itertools
 import json
@@ -74,6 +78,7 @@ class RegimeState:
     @classmethod
     def from_probs(cls, probs: Tensor) -> "RegimeState":
         """Build a canonical regime state from a probability vector."""
+        log.debug("function_entered", function="RegimeState.from_probs")
 
         if probs.dim() != 1 or probs.numel() != cls.N_REGIMES:
             raise ValueError(
@@ -134,6 +139,7 @@ class RegimeDetector(nn.Module):
 
     def fit(self, feature_df: pl.DataFrame) -> "RegimeDetector":
         """Fit the Gaussian HMM on a historical feature dataframe."""
+        log.debug("function_entered", function="RegimeDetector.fit")
 
         observations = self.extractor.extract(feature_df)
         if observations.shape[0] < self.n_regimes:
@@ -160,6 +166,7 @@ class RegimeDetector(nn.Module):
 
     def forward(self, features: Tensor) -> RegimeState:
         """Classify one rolling observation window into a soft regime state."""
+        log.debug("function_entered", function="RegimeDetector.forward")
 
         if features.dim() != 2:
             raise ValueError(
@@ -182,6 +189,7 @@ class RegimeDetector(nn.Module):
 
     def forward_sequence(self, feature_df: pl.DataFrame) -> list[RegimeState]:
         """Classify an entire historical dataframe into one soft regime state per row."""
+        log.debug("function_entered", function="RegimeDetector.forward_sequence")
 
         observations = self.extractor.extract(feature_df)
         if observations.shape[0] == 0:
@@ -196,6 +204,7 @@ class RegimeDetector(nn.Module):
 
     def save(self, path: Path) -> None:
         """Persist the fitted HMM to pickle alongside detector metadata JSON."""
+        log.debug("function_entered", function="RegimeDetector.save")
 
         if not self.is_fitted:
             raise RuntimeError("RegimeDetector.save() called before fit().")
@@ -223,6 +232,7 @@ class RegimeDetector(nn.Module):
     @classmethod
     def load(cls, path: Path) -> "RegimeDetector":
         """Load a persisted detector and restore its fitted state."""
+        log.debug("function_entered", function="RegimeDetector.load")
 
         model_path = cls._model_path(path)
         metadata_path = cls._metadata_path(path)
@@ -274,6 +284,7 @@ class RegimeDetector(nn.Module):
         }
 
         def score(state_mean: np.ndarray, regime_name: str) -> float:
+            log.debug("function_entered", function="RegimeDetector.score")
             if regime_name == "trending":
                 return (
                     state_mean[feature_index["trend_alignment_5_15_60"]]

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -239,6 +243,7 @@ class ColumnSchema:
 
     def validate_dataframe_columns(self, cols: Iterable[str]) -> list[str]:
         """Return required schema columns that are missing from a dataframe."""
+        log.debug("function_entered", function="ColumnSchema.validate_dataframe_columns")
 
         present = set(cols)
         required = self.past_observed + self.future_known + self.static + self.targets

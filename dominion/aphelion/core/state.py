@@ -12,6 +12,10 @@ ad-hoc parameter passing.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Mapping
@@ -88,6 +92,7 @@ def build_state_snapshot(
     When *feature_snapshot* is supplied and *features* is ``None``, the
     feature dict is automatically populated from the snapshot.
     """
+    log.debug("function_entered", function="build_state_snapshot")
     from aphelion.feature_engine.snapshot import flatten_feature_snapshot
 
     ts = timestamp_utc or _utcnow()

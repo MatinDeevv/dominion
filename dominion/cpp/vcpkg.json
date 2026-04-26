@@ -1,0 +1,17 @@
+{
+  "name": "dominion-cpp",
+  "version-string": "0.2.0",
+  "description": "DOMINION QuantLib-backed replay and evolution simulation engine",
+  "dependencies": [
+    "quantlib",
+    "pybind11",
+    "nlohmann-json",
+    "fmt",
+    {
+      "name": "arrow",
+      "features": [
+        "parquet"
+      ]
+    }
+  ]
+}

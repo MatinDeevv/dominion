@@ -9,6 +9,10 @@ Improvements:
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -31,6 +35,7 @@ class TradeProposal:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def with_size(self, new_size_pct: float) -> "TradeProposal":
+        log.debug("function_entered", function="TradeProposal.with_size")
         from dataclasses import replace
         return replace(self, size_pct=new_size_pct)
 
@@ -53,6 +58,7 @@ class TradeValidator:
     def validate(self, proposal: TradeProposal, extra_exposure: float = 0.0) -> ValidationResult:
         """Validate a trade proposal. extra_exposure is cumulative exposure from
         previously approved proposals in a bulk batch."""
+        log.debug("function_entered", function="TradeValidator.validate")
         rejections: list[str] = []
         warnings: list[str] = []
 
@@ -132,6 +138,7 @@ class TradeValidator:
 
     def bulk_validate(self, proposals: list[TradeProposal]) -> list[ValidationResult]:
         """Validate multiple proposals, accounting for cumulative exposure."""
+        log.debug("function_entered", function="TradeValidator.bulk_validate")
         results = []
         cumulative_exposure = 0.0
         for proposal in proposals:

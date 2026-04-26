@@ -3,6 +3,10 @@ MACRO Economic Event Calendar
 Tracks high-impact events and issues no-trade windows.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta, date
 from typing import List, Optional, Tuple
@@ -52,15 +56,18 @@ class EconomicCalendar:
         self._events: List[EconomicEvent] = []
 
     def add_event(self, event: EconomicEvent) -> None:
+        log.debug("function_entered", function="EconomicCalendar.add_event")
         self._events.append(event)
         self._events.sort(key=lambda e: e.time)
 
     def add_events(self, events: List[EconomicEvent]) -> None:
+        log.debug("function_entered", function="EconomicCalendar.add_events")
         self._events.extend(events)
         self._events.sort(key=lambda e: e.time)
 
     def get_no_trade_windows(self, target_date: date) -> List[Tuple[datetime, datetime]]:
         """Return no-trade windows for a given date."""
+        log.debug("function_entered", function="EconomicCalendar.get_no_trade_windows")
         windows = []
         for event in self._events:
             if event.time.date() == target_date and event.impact == "HIGH":
@@ -72,6 +79,7 @@ class EconomicCalendar:
 
     def is_safe_to_trade(self, current_time: datetime) -> Tuple[bool, Optional[str]]:
         """Check if it's safe to trade right now."""
+        log.debug("function_entered", function="EconomicCalendar.is_safe_to_trade")
         for event in self._events:
             if event.impact != "HIGH":
                 continue
@@ -91,6 +99,7 @@ class EconomicCalendar:
 
     def get_next_event(self, current_time: datetime) -> Optional[EconomicEvent]:
         """Get the next upcoming high-impact event."""
+        log.debug("function_entered", function="EconomicCalendar.get_next_event")
         for event in self._events:
             if event.time > current_time and event.impact == "HIGH":
                 return event
@@ -100,4 +109,5 @@ class EconomicCalendar:
         return [e for e in self._events if e.time.date() == target_date]
 
     def clear(self) -> None:
+        log.debug("function_entered", function="EconomicCalendar.clear")
         self._events.clear()

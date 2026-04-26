@@ -3,6 +3,10 @@ APHELION Paper Trading — Phase 5
 Data feed abstraction, paper trade ledger, session orchestrator, and runner.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 __all__ = [
     "DataFeed",
     "FeedConfig",

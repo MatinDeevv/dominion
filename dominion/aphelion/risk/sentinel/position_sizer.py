@@ -8,6 +8,10 @@ Improvements:
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from aphelion.core.config import KELLY_FRACTION, KELLY_MAX_F, SENTINEL
 
 
@@ -23,6 +27,7 @@ class PositionSizer:
         This is equivalent to f* = (p*b - q*a) / (a*b) but normalized so it's
         scale-invariant (same result for $200/$100 as $2000/$1000 at same ratio).
         """
+        log.debug("function_entered", function="PositionSizer.kelly_fraction")
         if avg_win <= 0 or avg_loss <= 0:
             return 0.0
 
@@ -48,6 +53,7 @@ class PositionSizer:
         Args:
             volatility_scalar: 0.5=high vol (halve size), 1.0=normal, 1.5=low vol (increase)
         """
+        log.debug("function_entered", function="PositionSizer.compute_size_pct")
         base = self.kelly_fraction(win_rate, avg_win, avg_loss)
         clamped_confidence = max(0.0, min(1.0, confidence))
         clamped_vol = max(0.25, min(2.0, volatility_scalar))
@@ -61,6 +67,7 @@ class PositionSizer:
         entry_price: float,
         pip_value_per_lot: float = 10.0,
     ) -> float:
+        log.debug("function_entered", function="PositionSizer.pct_to_lots")
         if entry_price <= 0:
             raise ValueError(f"entry_price must be > 0, got {entry_price}")
         if pip_value_per_lot <= 0:
@@ -83,6 +90,7 @@ class PositionSizer:
         risk_dollars = account_equity * risk_pct
         lots = risk_dollars / (atr * lot_size_oz)
         """
+        log.debug("function_entered", function="PositionSizer.atr_based_lots")
         if atr <= 0 or lot_size_oz <= 0:
             return 0.01
         risk_dollars = account_equity * min(risk_pct, SENTINEL.max_position_pct)
@@ -90,6 +98,7 @@ class PositionSizer:
         return max(0.01, round(lots, 2))
 
     def validate_size(self, size_pct: float, current_exposure_pct: float) -> tuple[bool, str]:
+        log.debug("function_entered", function="PositionSizer.validate_size")
         if size_pct > SENTINEL.max_position_pct:
             return (
                 False,

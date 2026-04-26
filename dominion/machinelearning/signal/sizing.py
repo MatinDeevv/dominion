@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import math
 
 
@@ -39,6 +43,7 @@ class KellyPositionSizer:
         practical risk overlay: no bet when the interval straddles zero, no negative sizes, and smaller exposure
         on lower-quality bars via the dual-source participation ratio.
         """
+        log.debug("function_entered", function="KellyPositionSizer.size")
 
         if direction not in {-1, 0, 1}:
             raise ValueError("direction must be -1, 0, or 1")
@@ -83,6 +88,7 @@ class KellyPositionSizer:
         is not enough when class probabilities are weak. The composite score helps downstream filtering compare
         signals on one interpretable 0..1 scale.
         """
+        log.debug("function_entered", function="KellyPositionSizer.signal_strength")
 
         if conformal_lower <= 0.0 <= conformal_upper:
             return 0.0

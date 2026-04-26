@@ -2,6 +2,10 @@
 TITAN — System-Wide Quality Gate
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from .gate import (
     TitanGate,
     GateReport,

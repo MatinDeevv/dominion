@@ -3,6 +3,10 @@ FLOW Order Flow Analysis
 Tick-level delta computation and trade classification.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -33,6 +37,7 @@ class OrderFlowAnalyzer:
 
     def update_tick(self, price: float, volume: float) -> OrderFlowState:
         """Process a single tick and update flow state."""
+        log.debug("function_entered", function="OrderFlowAnalyzer.update_tick")
         if self._last_price == 0:
             self._last_price = price
             return OrderFlowState()
@@ -66,6 +71,7 @@ class OrderFlowAnalyzer:
         self, prices: np.ndarray, volumes: np.ndarray
     ) -> OrderFlowState:
         """Compute delta from an array of intra-bar prices and volumes."""
+        log.debug("function_entered", function="OrderFlowAnalyzer.compute_bar_delta")
         if len(prices) < 2:
             return OrderFlowState()
 
@@ -106,6 +112,7 @@ class OrderFlowAnalyzer:
         )
 
     def reset(self) -> None:
+        log.debug("function_entered", function="OrderFlowAnalyzer.reset")
         self._deltas.clear()
         self._cumulative_delta = 0.0
         self._last_price = 0.0

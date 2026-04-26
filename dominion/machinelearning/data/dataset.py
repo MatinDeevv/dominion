@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from pathlib import Path
 from typing import Any
 import warnings
@@ -85,6 +89,7 @@ except ModuleNotFoundError:
 
         @staticmethod
         def stack(tensors: list[Any], dim: int = 0) -> _CompatTensor:
+            log.debug("function_entered", function="_CompatTorch.stack")
             arrays = [np.asarray(tensor) for tensor in tensors]
             return _CompatTensor(np.stack(arrays, axis=dim))
 

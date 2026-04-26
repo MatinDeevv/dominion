@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from typing import Any
 
 import torch
@@ -36,6 +40,7 @@ class GatingNetwork(nn.Module):
         regime_probs: Tensor,
     ) -> Tensor:
         """Return expert weights [B, n_experts] that sum to 1."""
+        log.debug("function_entered", function="GatingNetwork.forward")
 
         if encoder_hidden.dim() != 2:
             raise ValueError(
@@ -106,6 +111,7 @@ class MixtureOfExperts(nn.Module):
         regime_probs: Tensor,
     ) -> tuple[ModelOutput, Tensor]:
         """Return a blended model output together with expert weights."""
+        log.debug("function_entered", function="MixtureOfExperts.forward")
 
         expert_outputs = [expert(batch) for expert in self.experts]
         encoder_hiddens = [output.encoder_hidden for output in expert_outputs]
@@ -119,6 +125,7 @@ class MixtureOfExperts(nn.Module):
 
     def expert_utilization(self, expert_weights: Tensor) -> dict[str, float]:
         """Return mean routing weight per expert for logging and collapse detection."""
+        log.debug("function_entered", function="MixtureOfExperts.expert_utilization")
 
         if expert_weights.dim() != 2 or expert_weights.size(1) != self.n_experts:
             raise ValueError(

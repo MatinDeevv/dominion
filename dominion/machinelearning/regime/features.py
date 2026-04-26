@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import numpy as np
 import polars as pl
 import torch
@@ -29,6 +33,7 @@ class RegimeFeatureExtractor:
 
     def extract(self, df: pl.DataFrame) -> np.ndarray:
         """Extract regime features into a float32 array with missing columns zero-filled."""
+        log.debug("function_entered", function="RegimeFeatureExtractor.extract")
 
         row_count = df.height
         if row_count == 0:

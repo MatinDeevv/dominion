@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from pathlib import Path
 import warnings
 
@@ -70,6 +74,7 @@ class InferenceLoader:
         context window is used after sorting by ``time_utc`` and applying the
         same feature-preparation plus normalizer transform that training used.
         """
+        log.debug("function_entered", function="InferenceLoader.prepare_batch")
 
         if df.height < self.context_len:
             raise ValueError(

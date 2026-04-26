@@ -6,6 +6,10 @@ during backtests. Source of truth for all financial state in simulation.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from datetime import datetime
 from typing import Optional
 
@@ -39,6 +43,7 @@ class Portfolio:
     # ── Trade IDs ────────────────────────────────────────────────────────────
 
     def generate_trade_id(self) -> str:
+        log.debug("function_entered", function="Portfolio.generate_trade_id")
         tid = f"BT-{self._trade_counter:06d}"
         self._trade_counter += 1
         return tid
@@ -47,6 +52,7 @@ class Portfolio:
 
     def open_position(self, fill: Fill, order: Order) -> Position:
         """Create and store a position from a filled order."""
+        log.debug("function_entered", function="Portfolio.open_position")
         direction = "LONG" if order.side == OrderSide.BUY else "SHORT"
         position = Position(
             position_id=order.order_id,
@@ -77,6 +83,7 @@ class Portfolio:
         commission: float = 0.0,
     ) -> Optional[BacktestTrade]:
         """Close a position and record the completed trade."""
+        log.debug("function_entered", function="Portfolio.close_position")
         position = self._open_positions.pop(position_id, None)
         if position is None:
             return None
@@ -125,6 +132,7 @@ class Portfolio:
 
     def update_bar(self, bar: Bar, bar_index: int) -> None:
         """Update unrealized P&L and equity for all open positions."""
+        log.debug("function_entered", function="Portfolio.update_bar")
         unrealized = 0.0
         for pos in self._open_positions.values():
             if pos.direction == "LONG":
@@ -180,6 +188,7 @@ class Portfolio:
         return list(self._trades)
 
     def get_equity_series(self) -> tuple[list[datetime], list[float]]:
+        log.debug("function_entered", function="Portfolio.get_equity_series")
         if len(self._equity_curve) == len(self._bar_timestamps) + 1:
             if self._bar_timestamps:
                 return [self._bar_timestamps[0], *self._bar_timestamps], self._equity_curve
@@ -187,6 +196,7 @@ class Portfolio:
         return self._bar_timestamps, self._equity_curve
 
     def get_drawdown_series(self) -> tuple[list[datetime], list[float]]:
+        log.debug("function_entered", function="Portfolio.get_drawdown_series")
         if len(self._drawdown_curve) == len(self._bar_timestamps) + 1:
             if self._bar_timestamps:
                 return [self._bar_timestamps[0], *self._bar_timestamps], self._drawdown_curve
@@ -194,6 +204,7 @@ class Portfolio:
         return self._bar_timestamps, self._drawdown_curve
 
     def get_daily_returns(self) -> list[float]:
+        log.debug("function_entered", function="Portfolio.get_daily_returns")
         dates = sorted(self._daily_equity.keys())
         if len(dates) < 2:
             return []

@@ -14,6 +14,10 @@ v3 Upgrades:
   - Adaptive mode thresholds using rolling volatility regime
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -111,6 +115,7 @@ class EdgeDecayMonitor:
 
     def calibrate(self, historical_returns: List[float]) -> None:
         """Calibrate the expected mean from historical data."""
+        log.debug("function_entered", function="EdgeDecayMonitor.calibrate")
         if len(historical_returns) >= self._min_trades:
             self._target_mean = sum(historical_returns) / len(historical_returns)
             self._calibrated = True
@@ -125,6 +130,7 @@ class EdgeDecayMonitor:
 
     def update(self, trade_return: float) -> bool:
         """Update with a new trade return. Returns True if decay detected."""
+        log.debug("function_entered", function="EdgeDecayMonitor.update")
         self._returns.append(trade_return)
 
         if not self._calibrated and len(self._returns) >= self._min_trades:
@@ -199,6 +205,7 @@ class EdgeDecayMonitor:
         return self._cusum
 
     def reset(self) -> None:
+        log.debug("function_entered", function="EdgeDecayMonitor.reset")
         self._cusum = 0.0
         self._decay_active = False
 
@@ -239,6 +246,7 @@ class BlackSwanWatchdog:
         avg_volume: float,
     ) -> bool:
         """Check for black swan conditions. Returns True if detected."""
+        log.debug("function_entered", function="BlackSwanWatchdog.check")
         # Build state vector for statistical methods
         state = np.array([
             abs(price_change) / max(atr, 1e-10),
@@ -318,6 +326,7 @@ class BlackSwanWatchdog:
         return self._alert_active
 
     def reset(self) -> None:
+        log.debug("function_entered", function="BlackSwanWatchdog.reset")
         self._alert_active = False
 
 
@@ -335,10 +344,12 @@ class ModuleRanker:
 
     def record(self, module_name: str, contribution: float) -> None:
         """Record a module's contribution score for a trade."""
+        log.debug("function_entered", function="ModuleRanker.record")
         self._scores.setdefault(module_name, []).append(contribution)
 
     def rank(self) -> List[tuple]:
         """Rank modules by exponentially weighted average contribution."""
+        log.debug("function_entered", function="ModuleRanker.rank")
         averages = {}
         for name, scores in self._scores.items():
             if not scores:
@@ -358,6 +369,7 @@ class ModuleRanker:
 
     def module_sharpe(self, module_name: str) -> float:
         """Sharpe-like ratio of contributions for a module."""
+        log.debug("function_entered", function="ModuleRanker.module_sharpe")
         scores = self._scores.get(module_name, [])
         if len(scores) < 5:
             return 0.0
@@ -369,6 +381,7 @@ class ModuleRanker:
 
     def contribution_stability(self, module_name: str) -> float:
         """Coefficient of variation (lower = more stable)."""
+        log.debug("function_entered", function="ModuleRanker.contribution_stability")
         scores = self._scores.get(module_name, [])
         if len(scores) < 5:
             return float('inf')
@@ -402,10 +415,12 @@ class SOLA:
 
     def register_module(self, name: str) -> None:
         """Register a module for health monitoring."""
+        log.debug("function_entered", function="SOLA.register_module")
         self._state.module_health[name] = ModuleHealth(name=name)
 
     def heartbeat(self, module_name: str, latency_ms: float = 0.0) -> None:
         """Receive a heartbeat from a module."""
+        log.debug("function_entered", function="SOLA.heartbeat")
         if module_name in self._state.module_health:
             health = self._state.module_health[module_name]
             health.is_alive = True
@@ -414,11 +429,13 @@ class SOLA:
 
     def report_error(self, module_name: str) -> None:
         """Report an error in a module."""
+        log.debug("function_entered", function="SOLA.report_error")
         if module_name in self._state.module_health:
             self._state.module_health[module_name].error_count += 1
 
     def update_trade(self, trade_return: float) -> None:
         """Update with a trade result for edge monitoring."""
+        log.debug("function_entered", function="SOLA.update_trade")
         decay = self._edge_monitor.update(trade_return)
         if decay:
             self._state.edge_confidence = max(0, self._state.edge_confidence - 0.1)
@@ -433,6 +450,7 @@ class SOLA:
         volume: float, avg_volume: float,
     ) -> bool:
         """Check for black swan conditions."""
+        log.debug("function_entered", function="SOLA.check_black_swan")
         is_swan = self._watchdog.check(
             price_change, atr, spread, normal_spread, volume, avg_volume
         )
@@ -458,6 +476,7 @@ class SOLA:
         4. Black swan detected
         5. Source module is unhealthy
         """
+        log.debug("function_entered", function="SOLA.should_veto")
         # 1. Lockdown
         if self._state.mode == SOLAMode.LOCKDOWN:
             return VetoDecision(
@@ -524,6 +543,7 @@ class SOLA:
         Trigger a self-improvement analysis cycle.
         Returns a comprehensive diagnostic report with actionable recommendations.
         """
+        log.debug("function_entered", function="SOLA.self_improvement_cycle")
         self._state.self_improvement_cycle += 1
 
         underperformers = self._ranker.get_underperformers(threshold=0.0)

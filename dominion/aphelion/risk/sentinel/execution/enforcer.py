@@ -6,6 +6,10 @@ Applies circuit-breaker size multiplier then re-validates every proposal.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from collections import deque
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -39,6 +43,7 @@ class ExecutionEnforcer:
         ``SentinelCore.get_size_multiplier()``. Applying the circuit-breaker
         multiplier here as well would double-discount L1 trades.
         """
+        log.debug("function_entered", function="ExecutionEnforcer.approve_order")
         result = self._validator.validate(proposal)
 
         # Step 2: Return outcome
@@ -58,6 +63,7 @@ class ExecutionEnforcer:
     # ── Reporting ─────────────────────────────────────────────────────────────
 
     def get_rejection_summary(self) -> dict:
+        log.debug("function_entered", function="ExecutionEnforcer.get_rejection_summary")
         total = self._approved_count + self._rejected_count
         rejection_rate = self._rejected_count / total if total > 0 else 0.0
         return {

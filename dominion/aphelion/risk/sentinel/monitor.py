@@ -6,6 +6,10 @@ Publishes CRITICAL risk events when stop-loss levels are breached.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import asyncio
 from typing import TYPE_CHECKING
 
@@ -31,10 +35,12 @@ class SentinelMonitor:
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     async def start(self) -> None:
+        log.debug("function_entered", function="SentinelMonitor.start")
         self._running = True
         self._task = asyncio.create_task(self._monitor_loop())
 
     async def stop(self) -> None:
+        log.debug("function_entered", function="SentinelMonitor.stop")
         self._running = False
         if self._task is not None:
             self._task.cancel()
@@ -46,6 +52,7 @@ class SentinelMonitor:
     # ── Price feed ────────────────────────────────────────────────────────────
 
     def update_price(self, price: float) -> None:
+        log.debug("function_entered", function="SentinelMonitor.update_price")
         self._last_price = price
 
     # ── Internal loop ─────────────────────────────────────────────────────────

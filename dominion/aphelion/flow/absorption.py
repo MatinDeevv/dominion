@@ -3,6 +3,10 @@ FLOW Volume Absorption Detection
 Detects large volume being absorbed at a level without price movement.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from collections import deque
 from typing import Optional
@@ -37,6 +41,7 @@ class AbsorptionDetector:
         self, high: float, low: float, close: float, volume: float, open_price: float
     ) -> Optional[AbsorptionEvent]:
         """Check for absorption on this bar."""
+        log.debug("function_entered", function="AbsorptionDetector.update")
         self._volume_history.append(volume)
 
         if len(self._volume_history) < 10:
@@ -74,5 +79,6 @@ class AbsorptionDetector:
         return self._absorption_events[-10:]
 
     def reset(self) -> None:
+        log.debug("function_entered", function="AbsorptionDetector.reset")
         self._volume_history.clear()
         self._absorption_events.clear()

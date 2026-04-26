@@ -12,6 +12,10 @@ Improvements:
 - Configurable thresholds via constructor
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import time
 from datetime import datetime, timezone
 
@@ -48,6 +52,7 @@ class CircuitBreaker:
 
     def update(self, equity: float) -> str:
         """Update equity, evaluate drawdown level, return current state."""
+        log.debug("function_entered", function="CircuitBreaker.update")
         self._current_equity = equity
         if equity > self._peak_equity:
             self._peak_equity = equity
@@ -69,6 +74,7 @@ class CircuitBreaker:
         return self._state
 
     def trigger_l1(self, drawdown: float) -> None:
+        log.debug("function_entered", function="CircuitBreaker.trigger_l1")
         self._state = "L1"
         self._size_multiplier = 0.50
         self._triggers.append({
@@ -84,6 +90,7 @@ class CircuitBreaker:
         ))
 
     def trigger_l2(self, drawdown: float) -> None:
+        log.debug("function_entered", function="CircuitBreaker.trigger_l2")
         self._state = "L2"
         self._size_multiplier = 0.0  # No new trades
         self._triggers.append({
@@ -99,6 +106,7 @@ class CircuitBreaker:
         ))
 
     def trigger_l3(self, drawdown: float) -> None:
+        log.debug("function_entered", function="CircuitBreaker.trigger_l3")
         self._state = "L3"
         self._size_multiplier = 0.0
         self._triggers.append({
@@ -131,6 +139,7 @@ class CircuitBreaker:
 
     def reset(self) -> None:
         """Reset from L1 back to NORMAL. Only valid when state is L1."""
+        log.debug("function_entered", function="CircuitBreaker.reset")
         if self._state != "L1":
             return
         self._state = "NORMAL"
@@ -139,6 +148,7 @@ class CircuitBreaker:
 
     def apply_multiplier(self, proposed_size_pct: float) -> float:
         """Apply circuit breaker multiplier. Clamps result to [0.0, max_position_pct]."""
+        log.debug("function_entered", function="CircuitBreaker.apply_multiplier")
         result = proposed_size_pct * self._size_multiplier
         return max(0.0, min(result, SENTINEL.max_position_pct))
 

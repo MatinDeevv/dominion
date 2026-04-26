@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from collections import Counter
 from datetime import datetime, timedelta
 from math import sqrt
@@ -430,6 +434,7 @@ class PerformanceAnalyzer:
 
     def score(self) -> float:
         """Composite strategy score normalized to [0, 1] range."""
+        log.debug("function_entered", function="PerformanceAnalyzer.score")
         if self.total_trades < 30:
             return 0.0
         if self.win_rate < 0.40:

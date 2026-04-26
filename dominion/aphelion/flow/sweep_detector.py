@@ -4,6 +4,10 @@ Detects when price spikes through a liquidity zone and reverses.
 HIGH-QUALITY contrarian signal.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -43,6 +47,7 @@ class StopHuntDetector:
         zones: List[LiquidityZone],
     ) -> Optional[StopHuntSignal]:
         """Check if the most recent bar represents a stop hunt reversal."""
+        log.debug("function_entered", function="StopHuntDetector.detect")
         if len(closes) < 3:
             return None
 

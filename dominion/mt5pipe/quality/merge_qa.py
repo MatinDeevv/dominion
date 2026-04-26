@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import datetime as dt
 import shutil
 from dataclasses import dataclass
@@ -50,6 +54,7 @@ class RawTickRangeStats:
 
 def iter_utc_dates(start_date: dt.date, end_date: dt.date) -> list[dt.date]:
     """Return all UTC dates in an inclusive range."""
+    log.debug("function_entered", function="iter_utc_dates")
     if end_date < start_date:
         raise ValueError("end_date must be on or after start_date")
 
@@ -67,6 +72,7 @@ def resolve_utc_day_bounds(
     hours_end_utc: dt.time | None = None,
 ) -> tuple[dt.datetime, dt.datetime]:
     """Resolve one UTC date into a [start, end) time window."""
+    log.debug("function_entered", function="resolve_utc_day_bounds")
     if (hours_start_utc is None) != (hours_end_utc is None):
         raise ValueError("hours_start_utc and hours_end_utc must both be set or both be omitted")
 
@@ -110,6 +116,7 @@ def collect_raw_tick_range_stats(
     hours_end_utc: dt.time | None = None,
 ) -> RawTickRangeStats:
     """Summarize raw tick coverage for a broker across a UTC date range."""
+    log.debug("function_entered", function="collect_raw_tick_range_stats")
     dates = iter_utc_dates(start_date, end_date)
     total_ticks = 0
     covered_dates: list[dt.date] = []
@@ -163,6 +170,7 @@ def assert_synchronized_raw_tick_coverage(
     hours_end_utc: dt.time | None = None,
 ) -> tuple[RawTickRangeStats, RawTickRangeStats]:
     """Fail if requested raw tick coverage exists for one broker but not the other."""
+    log.debug("function_entered", function="assert_synchronized_raw_tick_coverage")
     stats_a = collect_raw_tick_range_stats(
         paths,
         store,
@@ -306,6 +314,7 @@ def build_daily_merge_qa_report(
     expected_bucket_ms: int | None = None,
 ) -> pl.DataFrame:
     """Aggregate raw, canonical, and diagnostic data into one row per UTC day."""
+    log.debug("function_entered", function="build_daily_merge_qa_report")
     assert_synchronized_raw_tick_coverage(paths, store, broker_a_id, broker_b_id, symbol, start_date, end_date)
 
     rows: list[dict[str, Any]] = []
@@ -384,6 +393,7 @@ def write_daily_merge_qa_report(
     symbol: str,
 ) -> int:
     """Persist the daily merge QA report into one partition per UTC day."""
+    log.debug("function_entered", function="write_daily_merge_qa_report")
     if report_df.is_empty():
         return 0
 
@@ -406,6 +416,7 @@ def assert_daily_merge_qa_exists(
     end_date: dt.date,
 ) -> None:
     """Ensure the daily QA report already exists for each requested day."""
+    log.debug("function_entered", function="assert_daily_merge_qa_exists")
     missing: list[str] = []
     for date in iter_utc_dates(start_date, end_date):
         if store.read_dir(paths.merge_qa_dir(symbol, date)).is_empty():
@@ -433,6 +444,7 @@ def run_bucket_sweep(
     bucket_values: Iterable[int] = (50, 75, 100, 125),
 ) -> pl.DataFrame:
     """Evaluate alternate bucket sizes without mutating persisted merge outputs."""
+    log.debug("function_entered", function="run_bucket_sweep")
     assert_daily_merge_qa_exists(paths, store, symbol, start_date, end_date)
     assert_synchronized_raw_tick_coverage(paths, store, broker_a_id, broker_b_id, symbol, start_date, end_date)
 
@@ -483,6 +495,7 @@ def run_bucket_sweep(
 
 def format_daily_merge_qa_summary(report_df: pl.DataFrame) -> str:
     """Format the daily merge QA report for terminal output."""
+    log.debug("function_entered", function="format_daily_merge_qa_summary")
     if report_df.is_empty():
         return "Daily merge QA report: no rows."
 
@@ -544,6 +557,7 @@ def format_daily_merge_qa_summary(report_df: pl.DataFrame) -> str:
 
 def format_bucket_sweep_summary(report_df: pl.DataFrame) -> str:
     """Format bucket sweep metrics for terminal output."""
+    log.debug("function_entered", function="format_bucket_sweep_summary")
     if report_df.is_empty():
         return "Bucket sweep: no rows."
 

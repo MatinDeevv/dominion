@@ -1,5 +1,9 @@
 """Public exports for the Phase 6 machine learning data layer."""
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from .datamodule import AphelionDataModule
 from .dataset import AphelionDataset
 from .inference import InferenceLoader

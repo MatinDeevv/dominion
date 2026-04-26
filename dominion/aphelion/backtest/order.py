@@ -5,6 +5,10 @@ Enums and dataclasses for order management, fills, and completed trades.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum

@@ -1,5 +1,9 @@
 """SENTINEL risk authority package."""
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from aphelion.risk.sentinel.core import Position, SentinelCore
 from aphelion.risk.sentinel.position_sizer import PositionSizer
 from aphelion.risk.sentinel.validator import (

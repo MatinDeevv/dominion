@@ -7,6 +7,10 @@ Trend identification and bias determination for OMEGA swing strategy.
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional, Tuple
@@ -43,6 +47,7 @@ class TrendFollower:
 
     def analyze(self, closes: np.ndarray, adx: float) -> TrendState:
         """Analyze current trend state."""
+        log.debug("function_entered", function="TrendFollower.analyze")
         if len(closes) < self._slow:
             return TrendState("FLAT", 0.0, 0.0, 0.0, adx)
 

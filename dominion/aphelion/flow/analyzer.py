@@ -3,6 +3,10 @@ FLOW Analyzer — Main coordinator for all FLOW sub-modules.
 Produces a unified FlowSignal for ARES voting.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -59,6 +63,7 @@ class FlowAnalyzer:
         volatility_regime: str = "",
     ) -> FlowSignal:
         """Run full FLOW analysis on recent bar data."""
+        log.debug("function_entered", function="FlowAnalyzer.analyze")
         if len(closes) < 5:
             return FlowSignal(
                 direction=0, confidence=0.0, delta=0.0,
@@ -157,6 +162,7 @@ class FlowAnalyzer:
         return direction, confidence
 
     def reset(self) -> None:
+        log.debug("function_entered", function="FlowAnalyzer.reset")
         self._orderflow.reset()
         self._imbalance.reset()
         self._absorption.reset()

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import json
 import warnings
 from pathlib import Path
@@ -45,6 +49,7 @@ class RobustFeatureNormalizer:
 
     def fit(self, df: pl.DataFrame) -> "RobustFeatureNormalizer":
         """Fit per-column median and IQR statistics on a training dataframe."""
+        log.debug("function_entered", function="RobustFeatureNormalizer.fit")
 
         stats: dict[str, dict[str, float]] = {}
         constant_columns: set[str] = set()
@@ -82,6 +87,7 @@ class RobustFeatureNormalizer:
 
     def transform(self, df: pl.DataFrame) -> pl.DataFrame:
         """Transform a dataframe using fitted median/IQR statistics."""
+        log.debug("function_entered", function="RobustFeatureNormalizer.transform")
 
         if not self._fitted:
             raise RuntimeError("RobustFeatureNormalizer.transform() called before fit().")
@@ -119,6 +125,7 @@ class RobustFeatureNormalizer:
 
     def save(self, path: str | Path) -> Path:
         """Persist the fitted normalizer to a JSON file."""
+        log.debug("function_entered", function="RobustFeatureNormalizer.save")
 
         if not self._fitted:
             raise RuntimeError("RobustFeatureNormalizer.save() called before fit().")
@@ -143,6 +150,7 @@ class RobustFeatureNormalizer:
     @classmethod
     def load(cls, path: str | Path) -> "RobustFeatureNormalizer":
         """Load a previously saved normalizer from JSON."""
+        log.debug("function_entered", function="RobustFeatureNormalizer.load")
 
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
         schema_payload = payload["schema"]

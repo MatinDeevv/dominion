@@ -3,6 +3,10 @@ MACRO Analyzer — Main coordinator for MACRO intelligence.
 Produces regime context for all other modules.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -64,6 +68,7 @@ class MacroAnalyzer:
         prev_dxy: Optional[float] = None,
     ) -> MacroSignal:
         """Run full MACRO analysis."""
+        log.debug("function_entered", function="MacroAnalyzer.analyze")
         if len(closes) < 30:
             return MacroSignal()
 
@@ -166,4 +171,5 @@ class MacroAnalyzer:
         return self._dxy
 
     def reset(self) -> None:
+        log.debug("function_entered", function="MacroAnalyzer.reset")
         self._dxy.reset()

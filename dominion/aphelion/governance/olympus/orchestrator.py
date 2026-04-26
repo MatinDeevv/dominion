@@ -7,6 +7,10 @@ Capital allocation, performance decay detection, retraining triggers.
 General-tier ARES voter (20 votes) — overrides individual strategies.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -80,6 +84,7 @@ class DecayDetector:
         self._decay_detected: bool = False
 
     def update(self, daily_return: float) -> bool:
+        log.debug("function_entered", function="DecayDetector.update")
         self._returns.append(daily_return)
         if len(self._returns) < self._window:
             return False
@@ -99,6 +104,7 @@ class DecayDetector:
         return self._decay_detected
 
     def reset(self) -> None:
+        log.debug("function_entered", function="DecayDetector.reset")
         self._cusum_pos = 0.0
         self._cusum_neg = 0.0
         self._decay_detected = False
@@ -121,11 +127,13 @@ class RetrainingTrigger:
         self._trade_outcomes: List[bool] = []
 
     def record_trade(self, won: bool) -> None:
+        log.debug("function_entered", function="RetrainingTrigger.record_trade")
         self._trade_outcomes.append(won)
         if len(self._trade_outcomes) > 200:
             self._trade_outcomes = self._trade_outcomes[-200:]
 
     def record_daily_sharpe(self, sharpe: float) -> None:
+        log.debug("function_entered", function="RetrainingTrigger.record_daily_sharpe")
         if sharpe < self._sharpe_threshold:
             self._low_sharpe_streak += 1
         else:
@@ -133,6 +141,7 @@ class RetrainingTrigger:
 
     def needs_retraining(self, decay_detected: bool = False) -> bool:
         # Win rate check
+        log.debug("function_entered", function="RetrainingTrigger.needs_retraining")
         if len(self._trade_outcomes) >= 100:
             recent = self._trade_outcomes[-100:]
             wr = sum(recent) / len(recent)
@@ -150,6 +159,7 @@ class RetrainingTrigger:
         return False
 
     def reset(self) -> None:
+        log.debug("function_entered", function="RetrainingTrigger.reset")
         self._low_sharpe_streak = 0
         self._trade_outcomes.clear()
 
@@ -179,15 +189,18 @@ class Olympus:
         self._account_balance: float = 10_000.0
 
     def update_alpha_performance(self, perf: StrategyPerformance) -> None:
+        log.debug("function_entered", function="Olympus.update_alpha_performance")
         self._state.alpha_perf = perf
         self._check_strategy_health("ALPHA", perf)
 
     def update_omega_performance(self, perf: StrategyPerformance) -> None:
+        log.debug("function_entered", function="Olympus.update_omega_performance")
         self._state.omega_perf = perf
         self._check_strategy_health("OMEGA", perf)
 
     def update_daily_return(self, daily_return: float) -> None:
         """Update daily return for decay detection."""
+        log.debug("function_entered", function="Olympus.update_daily_return")
         self._daily_pnl += daily_return
         decay = self._decay_detector.update(daily_return)
         self._state.decay_detected = decay
@@ -196,9 +209,11 @@ class Olympus:
             self._state.retraining_needed = True
 
     def record_trade(self, won: bool) -> None:
+        log.debug("function_entered", function="Olympus.record_trade")
         self._retrain_trigger.record_trade(won)
 
     def set_account_balance(self, balance: float) -> None:
+        log.debug("function_entered", function="Olympus.set_account_balance")
         self._account_balance = balance
 
     def _check_strategy_health(self, name: str, perf: StrategyPerformance) -> None:
@@ -219,6 +234,7 @@ class Olympus:
 
     def rebalance_allocation(self) -> AllocationState:
         """Rebalance capital allocation based on relative performance."""
+        log.debug("function_entered", function="Olympus.rebalance_allocation")
         alpha = self._state.alpha_perf
         omega = self._state.omega_perf
 
@@ -244,14 +260,17 @@ class Olympus:
         return self._state.allocation
 
     def pause(self, reason: str = "") -> None:
+        log.debug("function_entered", function="Olympus.pause")
         self._state.system_state = SystemState.PAUSED
         self._state.mode = StrategyMode.PAUSED
 
     def resume(self) -> None:
+        log.debug("function_entered", function="Olympus.resume")
         self._state.system_state = SystemState.RUNNING
         self._state.mode = StrategyMode.DUAL
 
     def emergency_halt(self) -> None:
+        log.debug("function_entered", function="Olympus.emergency_halt")
         self._state.system_state = SystemState.EMERGENCY
         self._state.mode = StrategyMode.PAUSED
 

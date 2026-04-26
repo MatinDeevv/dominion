@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import json
 import math
 from pathlib import Path
@@ -37,6 +41,7 @@ class ConformalCalibrator:
         Taking the finite-sample conformal quantile of those scores guarantees the expanded interval is at least
         as wide as necessary on exchangeable future samples from the same distribution.
         """
+        log.debug("function_entered", function="ConformalCalibrator.calibrate")
 
         lower = np.asarray(predicted_lower, dtype=float).reshape(-1)
         upper = np.asarray(predicted_upper, dtype=float).reshape(-1)
@@ -71,6 +76,7 @@ class ConformalCalibrator:
         predicted_upper: float | np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Return conformal intervals by symmetrically expanding the raw lower and upper quantile bounds."""
+        log.debug("function_entered", function="ConformalCalibrator.predict")
 
         q_hat = self.q_hat
         lower = np.asarray(predicted_lower, dtype=float)
@@ -95,6 +101,7 @@ class ConformalCalibrator:
 
     def save(self, path: Path) -> None:
         """Persist calibration state so inference uses the exact same coverage correction as research."""
+        log.debug("function_entered", function="ConformalCalibrator.save")
 
         if self._q_hat is None or self._empirical_coverage is None:
             raise RuntimeError("ConformalCalibrator must be calibrated before it can be saved")
@@ -111,6 +118,7 @@ class ConformalCalibrator:
     @classmethod
     def load(cls, path: Path) -> "ConformalCalibrator":
         """Reload a calibrator exactly so paper-trading and backtests use the same interval correction."""
+        log.debug("function_entered", function="ConformalCalibrator.load")
 
         payload = json.loads(path.read_text(encoding="utf-8"))
         calibrator = cls(alpha=float(payload["alpha"]))

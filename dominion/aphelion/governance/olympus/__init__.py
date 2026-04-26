@@ -2,6 +2,10 @@
 OLYMPUS — Master Strategy Orchestrator
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from .orchestrator import (
     Olympus,
     OlympusState,

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass, field
 from statistics import mean, pstdev
 from typing import Iterator
@@ -29,6 +33,7 @@ class WalkForwardResult:
 
     def summary_str(self) -> str:
         """Return a compact human-readable summary for logs and experiment notes."""
+        log.debug("function_entered", function="WalkForwardResult.summary_str")
 
         if not self.fold_metrics:
             return "walk_forward: no folds"
@@ -106,6 +111,7 @@ class WalkForwardSplitter:
         newest rows. An embargo gap is inserted between train end and validation
         start to avoid leakage from forward-looking labels.
         """
+        log.debug("function_entered", function="WalkForwardSplitter.split")
 
         if time_col not in df.columns:
             raise ValueError(f"time_col '{time_col}' is missing from the dataframe")

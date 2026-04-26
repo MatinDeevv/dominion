@@ -3,6 +3,10 @@ MACRO Regime Classifier
 Classifies the current market into one of five regimes.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -54,6 +58,7 @@ class RegimeClassifier:
         dxy_trend: str = "NEUTRAL",
     ) -> RegimeState:
         """Classify current regime from OHLC data."""
+        log.debug("function_entered", function="RegimeClassifier.classify")
         if len(closes) < self._adx_period * 2:
             return RegimeState()
 

@@ -3,6 +3,10 @@ MACRO Sentiment Analyzer
 Simple sentiment derived from price action and volume.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 from dataclasses import dataclass
 from typing import List
 
@@ -31,6 +35,7 @@ class SentimentAnalyzer:
         rsi: float = 50.0,
     ) -> SentimentState:
         """Compute sentiment from recent price data."""
+        log.debug("function_entered", function="SentimentAnalyzer.analyze")
         if len(closes) < 20:
             return SentimentState()
 

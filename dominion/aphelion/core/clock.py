@@ -4,6 +4,10 @@ Session detection, news calendar, trading hour management.
 DST-aware for London/New York session shifts.
 """
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
 import bisect
 import math
 import time
@@ -31,20 +35,24 @@ class MarketClock:
     def set_dst_offsets(self, london_minutes: int = 0, ny_minutes: int = 0) -> None:
         """Set DST offsets for session window adjustments.
         In summer: London opens at 07:00 UTC (offset -60), NY opens 12:30 UTC (offset -60)."""
+        log.debug("function_entered", function="MarketClock.set_dst_offsets")
         self._dst_offset_london = london_minutes
         self._dst_offset_ny = ny_minutes
 
     def set_simulated_time(self, dt: Optional[datetime]) -> None:
         """Override now_utc() for deterministic backtesting."""
+        log.debug("function_entered", function="MarketClock.set_simulated_time")
         self._simulated_time = dt
 
     def now_utc(self) -> datetime:
         # FIXED: Use simulated time when set (backtest mode)
+        log.debug("function_entered", function="MarketClock.now_utc")
         if self._simulated_time is not None:
             return self._simulated_time
         return datetime.now(timezone.utc)
 
     def current_session(self, dt: Optional[datetime] = None) -> Session:
+        log.debug("function_entered", function="MarketClock.current_session")
         dt = dt or self.now_utc()
         hour = dt.hour
         minute = dt.minute
@@ -77,6 +85,7 @@ class MarketClock:
         """Auto-detect DST offsets using zoneinfo (Python 3.9+ stdlib).
         In summer: London/NY sessions shift 1 hour earlier (offset = -60).
         """
+        log.debug("function_entered", function="MarketClock.auto_detect_dst")
         dt = dt or self.now_utc()
         try:
             from zoneinfo import ZoneInfo
@@ -96,6 +105,7 @@ class MarketClock:
             pass  # zoneinfo not available; keep manual offsets
 
     def is_market_open(self, dt: Optional[datetime] = None) -> bool:
+        log.debug("function_entered", function="MarketClock.is_market_open")
         dt = dt or self.now_utc()
         weekday = dt.weekday()  # 0=Monday, 6=Sunday
 
@@ -114,6 +124,7 @@ class MarketClock:
         return True
 
     def is_trading_session(self, dt: Optional[datetime] = None) -> bool:
+        log.debug("function_entered", function="MarketClock.is_trading_session")
         dt = dt or self.now_utc()
         if not self.is_market_open(dt):
             return False
@@ -121,6 +132,7 @@ class MarketClock:
         return session in (Session.LONDON, Session.NEW_YORK, Session.OVERLAP_LDN_NY)
 
     def minutes_to_session(self, target: Session, dt: Optional[datetime] = None) -> float:
+        log.debug("function_entered", function="MarketClock.minutes_to_session")
         dt = dt or self.now_utc()
         current_minutes = dt.hour * 60 + dt.minute
 
@@ -136,6 +148,7 @@ class MarketClock:
 
     def minutes_to_close(self, dt: Optional[datetime] = None) -> float:
         """Minutes to current session close. Returns minutes to next session open if in DEAD_ZONE."""
+        log.debug("function_entered", function="MarketClock.minutes_to_close")
         dt = dt or self.now_utc()
         session = self.current_session(dt)
         current_minutes = dt.hour * 60 + dt.minute
@@ -161,6 +174,7 @@ class MarketClock:
         return 0
 
     def is_friday_lockout(self, dt: Optional[datetime] = None) -> bool:
+        log.debug("function_entered", function="MarketClock.is_friday_lockout")
         dt = dt or self.now_utc()
         if dt.weekday() != 4:  # Not Friday
             return False
@@ -171,6 +185,7 @@ class MarketClock:
 
     def set_news_calendar(self, events: list[dict]) -> None:
         """Set news calendar. Each event: {'time': datetime, 'impact': 'HIGH'|'MED'|'LOW', 'name': str}"""
+        log.debug("function_entered", function="MarketClock.set_news_calendar")
         self._news_calendar = sorted(events, key=lambda e: e["time"])
         # Pre-build sorted high-impact times for O(log n) lockout check
         self._news_times = [
@@ -178,6 +193,7 @@ class MarketClock:
         ]
 
     def next_high_impact_news(self, dt: Optional[datetime] = None) -> Optional[dict]:
+        log.debug("function_entered", function="MarketClock.next_high_impact_news")
         dt = dt or self.now_utc()
         for event in self._news_calendar:
             if event["time"] > dt and event.get("impact") == "HIGH":
@@ -185,6 +201,7 @@ class MarketClock:
         return None
 
     def minutes_to_next_news(self, dt: Optional[datetime] = None) -> float:
+        log.debug("function_entered", function="MarketClock.minutes_to_next_news")
         dt = dt or self.now_utc()
         event = self.next_high_impact_news(dt)
         if event is None:
@@ -194,6 +211,7 @@ class MarketClock:
 
     def is_news_lockout(self, dt: Optional[datetime] = None) -> bool:
         """Check if in a news lockout window. Uses binary search for O(log n) performance."""
+        log.debug("function_entered", function="MarketClock.is_news_lockout")
         dt = dt or self.now_utc()
         if not self._news_times:
             return False
@@ -212,6 +230,7 @@ class MarketClock:
         return False
 
     def last_high_impact_news_minutes(self, dt: Optional[datetime] = None) -> float:
+        log.debug("function_entered", function="MarketClock.last_high_impact_news_minutes")
         dt = dt or self.now_utc()
         for event in reversed(self._news_calendar):
             if event["time"] <= dt and event.get("impact") == "HIGH":
@@ -219,16 +238,19 @@ class MarketClock:
         return float('inf')
 
     def day_of_week(self, dt: Optional[datetime] = None) -> str:
+        log.debug("function_entered", function="MarketClock.day_of_week")
         dt = dt or self.now_utc()
         days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
         return days[dt.weekday()]
 
     def week_of_month(self, dt: Optional[datetime] = None) -> int:
+        log.debug("function_entered", function="MarketClock.week_of_month")
         dt = dt or self.now_utc()
         return (dt.day - 1) // 7 + 1
 
     def is_month_end(self, dt: Optional[datetime] = None) -> bool:
         """True if within last 2 business days of the month."""
+        log.debug("function_entered", function="MarketClock.is_month_end")
         dt = dt or self.now_utc()
         next_month = (dt.replace(day=28) + timedelta(days=4)).replace(day=1)
         days_remaining = (next_month - dt).days
@@ -245,11 +267,13 @@ class MarketClock:
         return working_days <= 2
 
     def is_quarter_end(self, dt: Optional[datetime] = None) -> bool:
+        log.debug("function_entered", function="MarketClock.is_quarter_end")
         dt = dt or self.now_utc()
         return dt.month in (3, 6, 9, 12) and self.is_month_end(dt)
 
     def minutes_into_session(self, dt: Optional[datetime] = None) -> float:
         """Minutes elapsed since the current session opened. 0 if in DEAD_ZONE."""
+        log.debug("function_entered", function="MarketClock.minutes_into_session")
         dt = dt or self.now_utc()
         session = self.current_session(dt)
         if session == Session.DEAD_ZONE:
@@ -263,6 +287,7 @@ class MarketClock:
 
     def session_duration_minutes(self, dt: Optional[datetime] = None) -> float:
         """Duration of the current session in minutes. 0 if in DEAD_ZONE."""
+        log.debug("function_entered", function="MarketClock.session_duration_minutes")
         dt = dt or self.now_utc()
         session = self.current_session(dt)
         if session == Session.DEAD_ZONE:
@@ -276,6 +301,7 @@ class MarketClock:
 
     def session_progress(self, dt: Optional[datetime] = None) -> float:
         """Fraction through current session [0.0, 1.0]. 0 if in DEAD_ZONE."""
+        log.debug("function_entered", function="MarketClock.session_progress")
         dur = self.session_duration_minutes(dt)
         if dur == 0:
             return 0.0
@@ -283,6 +309,7 @@ class MarketClock:
 
     def session_features(self, dt: Optional[datetime] = None) -> dict:
         """Return session-aware features including cyclical time encoding for ML models."""
+        log.debug("function_entered", function="MarketClock.session_features")
         dt = dt or self.now_utc()
         hour = dt.hour
         minute = dt.minute
