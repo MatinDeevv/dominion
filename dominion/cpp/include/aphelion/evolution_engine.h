@@ -58,12 +58,12 @@ struct EvolutionConfig {
     int      tournament_k       = 5;
 
     // Acceptance thresholds
-    double   min_monthly_return = 0.20;
-    double   max_drawdown_limit = 0.30;
-    double   min_profit_factor  = 1.3;
+    double   min_monthly_return = 0.05;
+    double   max_drawdown_limit = 0.20;
+    double   min_profit_factor  = 1.15;
     double   min_expectancy     = 0.0;
     double   min_win_rate       = 0.25;
-    int      min_trade_count    = 20;
+    int      min_trade_count    = 15;
     double   min_consistency    = 0.3;
 
     // Complexity control

@@ -45,6 +45,8 @@ set(DOMINION_CPP_SOURCES
     src/tournament.cpp
     src/types.cpp
     src/validation_engine.cpp
+    src/hydra_strategy.cpp
+    src/hydra_evolution.cpp
 )
 
 add_library(dominion_cpp SHARED ${DOMINION_CPP_SOURCES})
@@ -70,3 +72,18 @@ install(TARGETS dominion_cpp
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
+
+# ── aphelion CLI executable ─────────────────────────────────
+add_executable(aphelion src/main.cpp)
+
+target_include_directories(aphelion
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(aphelion
+    PRIVATE
+        dominion_cpp
+)
+
+install(TARGETS aphelion RUNTIME DESTINATION bin)

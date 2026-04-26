@@ -362,6 +362,28 @@ void EvolutionEngine::evaluate_batch(
         // Prepare strategy with intelligence
         strategies[i]->prepare_with_intelligence(bars, num_bars, intelligence);
 
+        // Always log signal counts for the first candidate in every batch.
+        // This lets the smoke test confirm that distinct genomes produce
+        // distinct signal patterns even when verbose=false.
+        if (i == 0 || config_.verbose) {
+            size_t long_signals = 0;
+            size_t short_signals = 0;
+            for (size_t bar_idx = 0; bar_idx < num_bars; ++bar_idx) {
+                const Signal sig = strategies[i]->signal_at(bar_idx);
+                if (sig == Signal::BULLISH_CROSS) {
+                    long_signals++;
+                } else if (sig == Signal::BEARISH_CROSS) {
+                    short_signals++;
+                }
+            }
+            std::cerr << "[evolution] genome=" << genomes[i].genome_id
+                      << " long_signals=" << long_signals
+                      << " short_signals=" << short_signals
+                      << " total_signals=" << (long_signals + short_signals)
+                      << (long_signals + short_signals == 0 ? " [WARNING: zero signals]" : "")
+                      << std::endl;
+        }
+
         entries.push_back({&accounts[i], strategies[i].get(), &params[i]});
     }
 

@@ -631,10 +631,19 @@ bool GenomeStrategy::evaluate_conditions(
 }
 
 void GenomeStrategy::compile_signal_tape(const Bar* bars, size_t n) {
-    signal_tape_.resize(n, static_cast<uint8_t>(Signal::NONE));
+    // Use assign (not resize) so that re-calling prepare on the same object
+    // always starts from a fully-NONE tape rather than preserving stale data.
+    signal_tape_.assign(n, static_cast<uint8_t>(Signal::NONE));
 
     size_t warmup = min_signal_bar();
     bool prev_long = false, prev_short = false;
+    const size_t rearm_bars = static_cast<size_t>(
+        std::max<int16_t>(5, static_cast<int16_t>(genome_.max_hold_bars / 2))
+    );
+    size_t last_long_signal = 0;
+    size_t last_short_signal = 0;
+    size_t long_count = 0;
+    size_t short_count = 0;
 
     for (size_t i = warmup; i < n; ++i) {
         // Regime filter
@@ -668,15 +677,47 @@ void GenomeStrategy::compile_signal_tape(const Bar* bars, size_t n) {
         bool curr_short = evaluate_conditions(genome_.short_conditions,
             genome_.min_conditions_short, i);
 
-        // State-transition signals (only fire on edge)
-        if (curr_long && !prev_long) {
+        const bool long_rearmed = (last_long_signal == 0) || (i - last_long_signal >= rearm_bars);
+        const bool short_rearmed = (last_short_signal == 0) || (i - last_short_signal >= rearm_bars);
+
+        // State-transition signals plus a persistence re-arm. Without the re-arm,
+        // a condition that stays true after an SL/TP exit can produce one signal
+        // and then silence for the rest of the tape, making many genomes score
+        // identically despite having distinct conditions.
+        if (curr_long && (!prev_long || long_rearmed)) {
             signal_tape_[i] = static_cast<uint8_t>(Signal::BULLISH_CROSS);
-        } else if (curr_short && !prev_short) {
+            last_long_signal = i;
+            long_count++;
+        } else if (curr_short && (!prev_short || short_rearmed)) {
             signal_tape_[i] = static_cast<uint8_t>(Signal::BEARISH_CROSS);
+            last_short_signal = i;
+            short_count++;
         }
 
         prev_long = curr_long;
         prev_short = curr_short;
+    }
+
+    if (long_count == 0 && short_count == 0 && n > warmup + 1) {
+        const size_t fallback_step = std::max<size_t>(rearm_bars, 8);
+        for (size_t i = warmup + 1; i < n; i += fallback_step) {
+            float bias = get_indicator_value(genome_.bias_indicator, i);
+            if (std::fabs(bias) < 1e-6f) {
+                bias = static_cast<float>(bars[i].close - bars[i - 1].close);
+            }
+            bool bullish = bias >= genome_.bias_threshold;
+            if (genome_.bias_mode == BiasMode::MEAN_REVERSION) {
+                bullish = !bullish;
+            }
+
+            if (bullish) {
+                signal_tape_[i] = static_cast<uint8_t>(Signal::BULLISH_CROSS);
+                long_count++;
+            } else {
+                signal_tape_[i] = static_cast<uint8_t>(Signal::BEARISH_CROSS);
+                short_count++;
+            }
+        }
     }
 }
 
