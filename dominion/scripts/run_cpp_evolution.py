@@ -46,11 +46,45 @@ def main(
     context_tfs:      list[str] = typer.Option([], "--context-tf"),
     confidence_min:   float = typer.Option(0.40, help="Min confidence to include in tape"),
     skip_inference:   bool  = typer.Option(False, help="Skip inference if tape already exists"),
+    export_first:     bool  = typer.Option(False, help="Export mt5pipe bars to C++ format first"),
+    mt5pipe_root:     Path | None = typer.Option(None, help="mt5pipe storage root (required if --export-first)"),
+    broker_id:        str   = typer.Option("", help="Broker ID for export (required if --export-first)"),
     cpp_bin:          Path | None = typer.Option(None, help="Path to C++ binary"),
 ) -> None:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     signal_tape_path = output_dir / f"signal_tape_{symbol}_{timeframe}.parquet"
+
+    # -- Step 0 (optional): Export mt5pipe bars to C++ format --
+    if export_first:
+        if mt5pipe_root is None or not broker_id:
+            raise typer.BadParameter(
+                "--export-first requires both --mt5pipe-root and --broker-id"
+            )
+
+        from mt5pipe.export.cpp_exporter import export_bars_for_cpp
+
+        log.info("exporting_bars_for_cpp")
+        export_bars_for_cpp(
+            mt5pipe_root=mt5pipe_root,
+            cpp_data_root=data_root,
+            symbol=symbol,
+            timeframe=timeframe,
+            broker_id=broker_id,
+        )
+
+        # Export context timeframes too
+        for ctx_tf in context_tfs:
+            try:
+                export_bars_for_cpp(
+                    mt5pipe_root=mt5pipe_root,
+                    cpp_data_root=data_root,
+                    symbol=symbol,
+                    timeframe=ctx_tf,
+                    broker_id=broker_id,
+                )
+            except FileNotFoundError:
+                log.warning("context_tf_not_available", timeframe=ctx_tf)
 
     # ── Step 1-4: Inference + export ────────────────────────
     if skip_inference and signal_tape_path.exists():
