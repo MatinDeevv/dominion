@@ -30,6 +30,25 @@ from aphelion.intelligence.hydra.transformer import TransformerConfig, HydraTran
 NUM_SUB_MODELS = 6  # TFT, LSTM, CNN, MoE, TCN, Transformer
 
 
+def _align_categorical_config(config) -> None:
+    """Keep categorical embedding metadata in sync with n_categorical."""
+
+    n_categorical = int(getattr(config, "n_categorical", 0))
+    embedding_dims = list(getattr(config, "cat_embedding_dims", []))
+    cardinalities = list(getattr(config, "cat_cardinalities", []))
+    if n_categorical <= 0:
+        config.cat_embedding_dims = []
+        config.cat_cardinalities = []
+        return
+
+    if len(embedding_dims) < n_categorical:
+        embedding_dims.extend([8] * (n_categorical - len(embedding_dims)))
+    if len(cardinalities) < n_categorical:
+        cardinalities.extend([8] * (n_categorical - len(cardinalities)))
+    config.cat_embedding_dims = embedding_dims[:n_categorical]
+    config.cat_cardinalities = cardinalities[:n_categorical]
+
+
 @dataclass
 class EnsembleConfig:
     """HYDRA Full Ensemble — SUPER INSANE configuration."""
@@ -157,6 +176,9 @@ if HAS_TORCH:
             super().__init__()
             self.config = config or EnsembleConfig()
             cfg = self.config
+            _align_categorical_config(cfg.tft_config)
+            _align_categorical_config(cfg.lstm_config)
+            _align_categorical_config(cfg.moe_config)
 
             # ── Sub-Models ────────────────────────────────────────────────
             self.tft = TemporalFusionTransformer(cfg.tft_config)
@@ -270,6 +292,10 @@ if HAS_TORCH:
         ) -> dict[str, torch.Tensor]:
             """SUPER INSANE Ensemble forward pass."""
             cfg = self.config
+            if cont_inputs.dim() == 2:
+                cont_inputs = cont_inputs.unsqueeze(1)
+            if cat_inputs.dim() == 2:
+                cat_inputs = cat_inputs.unsqueeze(1)
 
             # ── 1. Run All Sub-Models ─────────────────────────────────────
             tft_out = self.tft(cont_inputs, cat_inputs)
